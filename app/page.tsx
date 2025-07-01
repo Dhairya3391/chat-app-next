@@ -39,7 +39,8 @@ export default function ChatPage() {
     const socket = socketManager.connect(username)
     setJoining(true)
     setJoinError(null)
-    // Set up event listeners after connecting
+    setConnected(true) // Optimistically set connected to true
+
     socket.on("connect", () => {
       console.log("Connected to server")
       setConnected(true)
@@ -68,6 +69,14 @@ export default function ChatPage() {
       console.log("Join error:", error)
       setJoining(false)
       setJoinError(error)
+      setConnected(false) // Set connected to false on join error
+      socket.off("connect")
+      socket.off("disconnect")
+      socket.off("join-success")
+      socket.off("join-error")
+      socket.off("new-message")
+      socket.off("user-joined")
+      socket.off("user-left")
     })
     socket.on("new-message", (message: any) => {
       addMessage({
@@ -89,10 +98,26 @@ export default function ChatPage() {
         timestamp: new Date(data.message.timestamp),
       })
     })
-    socket.on("error", (error: string) => {
-      console.error("Socket error:", error)
-    })
   }
+
+  useEffect(() => {
+    const socket = socketManager.getSocket()
+    if (socket) {
+      socket.on("error", (error: string) => {
+        console.error("Socket error:", error)
+        toast({
+          title: "Socket Error",
+          description: error || "An unexpected socket error occurred.",
+          variant: "destructive",
+        })
+      })
+    }
+    return () => {
+      if (socket) {
+        socket.off("error")
+      }
+    }
+  }, [toast])
 
   const handleSendMessage = async (message: string) => {
     const socket = socketManager.getSocket()

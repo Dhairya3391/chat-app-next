@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import type { Message } from "@/stores/chat-store"
 import { cn } from "@/lib/utils"
 import DOMPurify from "dompurify"
+import { generateColor } from "@/lib/color"
 
 interface MessageProps {
   message: Message
@@ -20,6 +21,8 @@ export function ChatMessage({ message, isOwn }: MessageProps) {
   }
 
   const sanitizedContent = DOMPurify.sanitize(message.content)
+
+  const userColor = generateColor(message.username)
 
   if (message.type === "system") {
     return (
@@ -54,7 +57,14 @@ export function ChatMessage({ message, isOwn }: MessageProps) {
             : "bg-anti_flash_white-500 text-black-600 border-taupe_gray-200 shadow-sm",
         )}
       >
-        {!isOwn && <div className="text-xs font-semibold text-dim_gray-400 mb-1">{message.username}</div>}
+        {!isOwn && (
+          <div
+            className="text-xs font-semibold mb-1"
+            style={{ color: userColor, backgroundColor: `${userColor}40`, padding: '2px 6px', borderRadius: '4px' }}
+          >
+            {message.username}
+          </div>
+        )}
         <div
           className={cn("text-sm break-words", isOwn ? "text-anti_flash_white-500" : "text-black-600")}
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}

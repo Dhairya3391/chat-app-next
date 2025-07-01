@@ -12,13 +12,19 @@ class SocketManager {
   }
 
   connect(username: string): Socket {
-    if (!this.socket) {
-      this.socket = io({
-        path: "/api/socket",
-        addTrailingSlash: false,
-        query: { username },
-      })
+    if (this.socket) {
+      this.socket.disconnect()
     }
+
+    this.socket = io({
+      path: "/api/socket",
+      addTrailingSlash: false,
+      query: { username },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    })
+
     return this.socket
   }
 

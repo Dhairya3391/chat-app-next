@@ -46,13 +46,12 @@ const SocketHandler = (req: any, res: any) => {
 
           // Check if username is already taken (case-insensitive)
           const normalizedUsername = username.trim().toLowerCase()
-          const isUsernameTaken = Array.from(connectedUsers.values()).some(
+          const existingUser = Array.from(connectedUsers.values()).find(
             (user) => user.username.toLowerCase() === normalizedUsername,
           )
 
-          if (isUsernameTaken) {
-            socket.emit("join-error", "Username is already taken")
-            return
+          if (existingUser) {
+            connectedUsers.delete(existingUser.id)
           }
 
           // Add user to connected users

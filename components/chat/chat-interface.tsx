@@ -17,8 +17,8 @@ interface ChatInterfaceProps {
 export function ChatInterface({ onSendMessage }: ChatInterfaceProps) {
   const { messages, users, currentUsername, isConnected } = useChatStore()
   const { toast } = useToast()
-  const [showSidebar, setShowSidebar] = useState(true)
-  const [connectionToast, setConnectionToast] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [connectionToastDisplayed, setConnectionToastDisplayed] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -31,28 +31,34 @@ export function ChatInterface({ onSendMessage }: ChatInterfaceProps) {
   }, [messages])
 
   useEffect(() => {
-    if (!isConnected && !connectionToast) {
+    if (!isConnected && !connectionToastDisplayed) {
       toast({
         title: "Disconnected",
         description: "You are not connected to the chat server.",
         variant: "destructive",
       })
-      setConnectionToast(true)
-    } else if (isConnected && connectionToast) {
+      setConnectionToastDisplayed(true)
+    } else if (isConnected && connectionToastDisplayed) {
       toast({
         title: "Connected",
         description: "You are now connected to the chat server.",
         variant: "default",
       })
-      setConnectionToast(false)
+      setConnectionToastDisplayed(false)
     }
-  }, [isConnected])
+  }, [isConnected, connectionToastDisplayed, toast])
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev)
+  }
 
   return (
     <div className="min-h-screen bg-anti_flash_white-500 dark:bg-black-100 p-0 md:p-4 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-0 md:gap-4 h-[100dvh] md:h-[calc(100vh-2rem)]">
+      <div
+        className={`max-w-7xl mx-auto grid grid-cols-1 ${isSidebarOpen ? "lg:grid-cols-4" : "lg:grid-cols-[1fr_auto]"} gap-0 md:gap-4 h-[100dvh] md:h-[calc(100vh-2rem)]`}
+      >
         {/* Main Chat Area */}
-        <div className="lg:col-span-3 flex flex-col h-full">
+        <div className={`${isSidebarOpen ? "lg:col-span-3" : "lg:col-span-1"} flex flex-col h-full`}>
           <Card className="h-full flex flex-col bg-platinum-500 border-taupe_gray-200 shadow-none">
             <CardHeader className="pb-2 border-b border-taupe_gray-200 bg-anti_flash_white-500 dark:bg-black-100">
               <CardTitle className="flex items-center justify-between">
@@ -62,10 +68,10 @@ export function ChatInterface({ onSendMessage }: ChatInterfaceProps) {
                 </div>
                 <button
                   className="block lg:hidden px-2 py-1 rounded text-taupe_gray-400 hover:bg-platinum-100"
-                  onClick={() => setShowSidebar((v) => !v)}
-                  aria-label={showSidebar ? "Hide online users" : "Show online users"}
+                  onClick={toggleSidebar}
+                  aria-label={isSidebarOpen ? "Hide online users" : "Show online users"}
                 >
-                  {showSidebar ? "Hide Users" : "Show Users"}
+                  {isSidebarOpen ? "Hide Users" : "Show Users"}
                 </button>
                 <div className="hidden lg:flex items-center gap-2 text-sm">
                   {isConnected ? (
@@ -122,20 +128,16 @@ export function ChatInterface({ onSendMessage }: ChatInterfaceProps) {
         </div>
 
         {/* Users Sidebar */}
-        <AnimatePresence>
-          {(showSidebar || window.innerWidth >= 1024) && (
-            <motion.div
-              key="sidebar"
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 40 }}
-              transition={{ duration: 0.3 }}
-              className="lg:col-span-1 h-full bg-anti_flash_white-500 dark:bg-black-100 border-l border-taupe_gray-200"
-            >
-              <UsersList users={users} currentUsername={currentUsername || ""} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <motion.div
+          key="sidebar"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 40 }}
+          transition={{ duration: 0.3 }}
+          className={`h-full bg-anti_flash_white-500 dark:bg-black-100 border-l border-taupe_gray-200 ${isSidebarOpen ? "lg:col-span-1" : "lg:col-span-1 lg:w-16"}`}
+        >
+          <UsersList users={users} currentUsername={currentUsername || ""} isCollapsed={!isSidebarOpen} onToggle={toggleSidebar} />
+        </motion.div>
       </div>
     </div>
   )

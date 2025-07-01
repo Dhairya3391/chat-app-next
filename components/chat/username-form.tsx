@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,9 +19,17 @@ interface UsernameFormProps {
 export function UsernameForm({ onSubmit, isLoading, error }: UsernameFormProps) {
   const [username, setUsername] = useState("")
 
+  useEffect(() => {
+    const savedUsername = localStorage.getItem("chat-username")
+    if (savedUsername) {
+      setUsername(savedUsername)
+    }
+  }, [])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (username.trim() && !isLoading) {
+      localStorage.setItem("chat-username", username.trim())
       onSubmit(username.trim())
     }
   }
