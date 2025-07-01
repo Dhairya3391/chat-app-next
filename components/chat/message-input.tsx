@@ -43,7 +43,7 @@ export function MessageInput({ onSendMessage, disabled }: MessageInputProps) {
     >
       <Input
         type="text"
-        placeholder="Type your message..."
+        placeholder={sending ? "Sending..." : "Type your message..."}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         maxLength={500}

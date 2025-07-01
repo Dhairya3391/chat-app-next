@@ -82,8 +82,8 @@ export default function ChatPage() {
         timestamp: new Date(data.message.timestamp),
       })
     })
-    socket.on("user-left", (data: { userId: string; message: any; users: any[] }) => {
-      setUsers(data.users)
+    socket.on("user-left", (data: { userId: string; message: any }) => {
+      setUsers(useChatStore.getState().users.filter((user) => user.id !== data.userId))
       addMessage({
         ...data.message,
         timestamp: new Date(data.message.timestamp),

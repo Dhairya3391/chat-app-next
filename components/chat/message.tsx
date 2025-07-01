@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import type { Message } from "@/stores/chat-store"
 import { cn } from "@/lib/utils"
+import DOMPurify from "dompurify"
 
 interface MessageProps {
   message: Message
@@ -18,6 +19,8 @@ export function ChatMessage({ message, isOwn }: MessageProps) {
     }).format(new Date(date))
   }
 
+  const sanitizedContent = DOMPurify.sanitize(message.content)
+
   if (message.type === "system") {
     return (
       <motion.div
@@ -27,9 +30,10 @@ export function ChatMessage({ message, isOwn }: MessageProps) {
         transition={{ duration: 0.3 }}
         className="flex justify-center my-2"
       >
-        <div className="bg-platinum-300 text-dim_gray-400 text-xs px-3 py-1 rounded-full border border-taupe_gray-300 shadow-none">
-          {message.content}
-        </div>
+        <div
+          className="bg-platinum-300 text-dim_gray-400 text-xs px-3 py-1 rounded-full border border-taupe_gray-300 shadow-none"
+          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+        />
       </motion.div>
     )
   }
@@ -51,8 +55,13 @@ export function ChatMessage({ message, isOwn }: MessageProps) {
         )}
       >
         {!isOwn && <div className="text-xs font-semibold text-dim_gray-400 mb-1">{message.username}</div>}
-        <div className={cn("text-sm break-words", isOwn ? "text-anti_flash_white-500" : "text-black-600")}>{message.content}</div>
-        <div className={cn("text-[10px] mt-1 text-right", isOwn ? "text-platinum-400" : "text-taupe_gray-400")}>{formatTime(message.timestamp)}</div>
+        <div
+          className={cn("text-sm break-words", isOwn ? "text-anti_flash_white-500" : "text-black-600")}
+          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+        />
+        <div className={cn("text-[10px] mt-1 text-right", isOwn ? "text-platinum-400" : "text-taupe_gray-400")}>
+          {formatTime(message.timestamp)}
+        </div>
       </div>
     </motion.div>
   )

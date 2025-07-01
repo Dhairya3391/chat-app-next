@@ -54,7 +54,9 @@ export function UsernameForm({ onSubmit, isLoading, error }: UsernameFormProps) 
                   disabled={isLoading}
                   className="text-center text-lg"
                 />
-                <p className="text-xs text-gray-500 mt-1 text-center">{username.length}/20 characters</p>
+                {username.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1 text-center">{username.length}/20 characters</p>
+                )}
               </div>
 
               {error && (

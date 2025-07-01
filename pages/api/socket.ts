@@ -161,7 +161,6 @@ const SocketHandler = (req: any, res: any) => {
             socket.broadcast.emit("user-left", {
               userId: socket.id,
               message: leaveMessage,
-              users: Array.from(connectedUsers.values()),
             })
 
             console.log(`User ${user.username} disconnected`)

@@ -30,7 +30,7 @@ export function UsersList({ users, currentUsername }: UsersListProps) {
         </button>
       </CardHeader>
       {open && (
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 max-h-96 overflow-y-auto">
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
             <AnimatePresence>
               {users.map((user) => (
