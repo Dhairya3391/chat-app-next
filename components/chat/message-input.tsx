@@ -1,54 +1,57 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useRef, forwardRef, useImperativeHandle } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Send } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
-import { motion } from "framer-motion"
+import type React from "react";
+import { useState, useRef, forwardRef, useImperativeHandle } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Send } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { motion } from "framer-motion";
 
 interface MessageInputProps {
-  onSendMessage: (message: string) => Promise<void> | void
-  disabled?: boolean
-  bannedUntil?: Date | null
-  value?: string
-  onChange?: (value: string) => void
+  onSendMessage: (message: string) => Promise<void> | void;
+  disabled?: boolean;
+  bannedUntil?: Date | null;
+  value?: string;
+  onChange?: (value: string) => void;
 }
 
 export const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(
-  function MessageInput({ onSendMessage, disabled, bannedUntil, value, onChange }, ref) {
-    const [internalMessage, setInternalMessage] = useState("")
-    const message = value !== undefined ? value : internalMessage
-    const setMessage = onChange ? onChange : setInternalMessage
-    const [sending, setSending] = useState(false)
-    const { toast } = useToast()
-    const inputRef = useRef<HTMLInputElement>(null)
+  function MessageInput(
+    { onSendMessage, disabled, bannedUntil, value, onChange },
+    ref,
+  ) {
+    const [internalMessage, setInternalMessage] = useState("");
+    const message = value !== undefined ? value : internalMessage;
+    const setMessage = onChange ? onChange : setInternalMessage;
+    const [sending, setSending] = useState(false);
+    const { toast } = useToast();
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    useImperativeHandle(ref, () => inputRef.current!, [inputRef.current])
+    useImperativeHandle(ref, () => inputRef.current!, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault()
-      if (!message.trim() || disabled || sending) return
-      setSending(true)
+      e.preventDefault();
+      if (!message.trim() || disabled || sending) return;
+      setSending(true);
       try {
-        await onSendMessage(message.trim())
-        setMessage("")
-      } catch (err) {
+        await onSendMessage(message.trim());
+        setMessage("");
+      } catch {
         toast({
           title: "Message failed",
           description: "Could not send your message. Please try again.",
           variant: "destructive",
-        })
+        });
       } finally {
-        setSending(false)
+        setSending(false);
       }
-    }
+    };
 
-    const isBanned = !!(bannedUntil && new Date() < bannedUntil)
-    let banSeconds = 0
+    const isBanned = !!(bannedUntil && new Date() < bannedUntil);
+    let banSeconds = 0;
     if (isBanned && bannedUntil) {
-      banSeconds = Math.ceil((bannedUntil.getTime() - Date.now()) / 1000)
+      banSeconds = Math.ceil((bannedUntil.getTime() - Date.now()) / 1000);
     }
 
     return (
@@ -58,7 +61,13 @@ export const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(
       >
         <Input
           type="text"
-          placeholder={isBanned ? `Banned for ${banSeconds}s` : (sending ? "Sending..." : "Type your message...")}
+          placeholder={
+            isBanned
+              ? `Banned for ${banSeconds}s`
+              : sending
+                ? "Sending..."
+                : "Type your message..."
+          }
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           maxLength={500}
@@ -74,7 +83,12 @@ export const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(
         >
           <Button
             type="submit"
-            disabled={!message.trim() || Boolean(disabled) || Boolean(sending) || isBanned}
+            disabled={
+              !message.trim() ||
+              Boolean(disabled) ||
+              Boolean(sending) ||
+              isBanned
+            }
             size="icon"
             className="bg-dim_gray-400 hover:bg-dim_gray-500 text-anti_flash_white-500 disabled:bg-taupe_gray-200 disabled:text-taupe_gray-400 border border-taupe_gray-200 shadow-none"
           >
@@ -82,6 +96,6 @@ export const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(
           </Button>
         </motion.div>
       </form>
-    )
-  }
-)
+    );
+  },
+);

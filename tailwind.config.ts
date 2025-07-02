@@ -1,170 +1,170 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-    darkMode: ["class"],
-    content: [
+  darkMode: ["class"],
+  content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "*.{js,ts,jsx,tsx,mdx}"
+    "*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-  	extend: {
-  		colors: {
-  			background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
-  			card: {
-  				DEFAULT: 'hsl(var(--card))',
-  				foreground: 'hsl(var(--card-foreground))'
-  			},
-  			popover: {
-  				DEFAULT: 'hsl(var(--popover))',
-  				foreground: 'hsl(var(--popover-foreground))'
-  			},
-  			primary: {
-  				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))',
-  				blue: '#2563eb',
-  				purple: '#7c3aed',
-  				pink: '#ec4899',
-  				yellow: '#facc15',
-  				teal: '#14b8a6',
-  			},
-  			secondary: {
-  				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))',
-  				dark: '#1e293b',
-  				light: '#f1f5f9',
-  			},
-  			muted: {
-  				DEFAULT: 'hsl(var(--muted))',
-  				foreground: 'hsl(var(--muted-foreground))',
-  				dark: '#334155',
-  				light: '#e2e8f0',
-  			},
-  			accent: {
-  				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))',
-  				blue: '#3b82f6',
-  				purple: '#a78bfa',
-  				pink: '#f472b6',
-  				yellow: '#fde68a',
-  				teal: '#5eead4',
-  			},
-  			destructive: {
-  				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))',
-  				red: '#ef4444',
-  			},
-  			border: 'hsl(var(--border))',
-  			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
-  			},
-  			sidebar: {
-  				DEFAULT: 'hsl(var(--sidebar-background))',
-  				foreground: 'hsl(var(--sidebar-foreground))',
-  				primary: 'hsl(var(--sidebar-primary))',
-  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-  				accent: 'hsl(var(--sidebar-accent))',
-  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-  				border: 'hsl(var(--sidebar-border))',
-  				ring: 'hsl(var(--sidebar-ring))'
-  			},
-  			black: {
-  				DEFAULT: '#000000',
-  				100: '#000000',
-  				200: '#000000',
-  				300: '#000000',
-  				400: '#000000',
-  				500: '#000000',
-  				600: '#333333',
-  				700: '#666666',
-  				800: '#999999',
-  				900: '#cccccc',
-  			},
-  			dim_gray: {
-  				DEFAULT: '#66666e',
-  				100: '#151516',
-  				200: '#29292d',
-  				300: '#3e3e43',
-  				400: '#525259',
-  				500: '#66666e',
-  				600: '#84848d',
-  				700: '#a3a3aa',
-  				800: '#c1c1c6',
-  				900: '#e0e0e3',
-  			},
-  			taupe_gray: {
-  				DEFAULT: '#9999a1',
-  				100: '#1e1e21',
-  				200: '#3d3d42',
-  				300: '#5b5b63',
-  				400: '#797984',
-  				500: '#9999a1',
-  				600: '#aeaeb5',
-  				700: '#c3c3c7',
-  				800: '#d7d7da',
-  				900: '#ebebec',
-  			},
-  			platinum: {
-  				DEFAULT: '#e6e6e9',
-  				100: '#2c2c31',
-  				200: '#575762',
-  				300: '#848492',
-  				400: '#b5b5be',
-  				500: '#e6e6e9',
-  				600: '#ececee',
-  				700: '#f0f0f2',
-  				800: '#f5f5f6',
-  				900: '#fafafb',
-  			},
-  			anti_flash_white: {
-  				DEFAULT: '#f4f4f6',
-  				100: '#2c2c36',
-  				200: '#58586c',
-  				300: '#88889e',
-  				400: '#bebeca',
-  				500: '#f4f4f6',
-  				600: '#f6f6f8',
-  				700: '#f8f8f9',
-  				800: '#fbfbfb',
-  				900: '#fdfdfd',
-  			},
-  		},
-  		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
-  		},
-  		keyframes: {
-  			'accordion-down': {
-  				from: {
-  					height: '0'
-  				},
-  				to: {
-  					height: 'var(--radix-accordion-content-height)'
-  				}
-  			},
-  			'accordion-up': {
-  				from: {
-  					height: 'var(--radix-accordion-content-height)'
-  				},
-  				to: {
-  					height: '0'
-  				}
-  			}
-  		},
-  		animation: {
-  			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
-  		}
-  	}
+    extend: {
+      colors: {
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+          blue: "#2563eb",
+          purple: "#7c3aed",
+          pink: "#ec4899",
+          yellow: "#facc15",
+          teal: "#14b8a6",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+          dark: "#1e293b",
+          light: "#f1f5f9",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+          dark: "#334155",
+          light: "#e2e8f0",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+          blue: "#3b82f6",
+          purple: "#a78bfa",
+          pink: "#f472b6",
+          yellow: "#fde68a",
+          teal: "#5eead4",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+          red: "#ef4444",
+        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        chart: {
+          "1": "hsl(var(--chart-1))",
+          "2": "hsl(var(--chart-2))",
+          "3": "hsl(var(--chart-3))",
+          "4": "hsl(var(--chart-4))",
+          "5": "hsl(var(--chart-5))",
+        },
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
+        black: {
+          DEFAULT: "#000000",
+          100: "#000000",
+          200: "#000000",
+          300: "#000000",
+          400: "#000000",
+          500: "#000000",
+          600: "#333333",
+          700: "#666666",
+          800: "#999999",
+          900: "#cccccc",
+        },
+        dim_gray: {
+          DEFAULT: "#66666e",
+          100: "#151516",
+          200: "#29292d",
+          300: "#3e3e43",
+          400: "#525259",
+          500: "#66666e",
+          600: "#84848d",
+          700: "#a3a3aa",
+          800: "#c1c1c6",
+          900: "#e0e0e3",
+        },
+        taupe_gray: {
+          DEFAULT: "#9999a1",
+          100: "#1e1e21",
+          200: "#3d3d42",
+          300: "#5b5b63",
+          400: "#797984",
+          500: "#9999a1",
+          600: "#aeaeb5",
+          700: "#c3c3c7",
+          800: "#d7d7da",
+          900: "#ebebec",
+        },
+        platinum: {
+          DEFAULT: "#e6e6e9",
+          100: "#2c2c31",
+          200: "#575762",
+          300: "#848492",
+          400: "#b5b5be",
+          500: "#e6e6e9",
+          600: "#ececee",
+          700: "#f0f0f2",
+          800: "#f5f5f6",
+          900: "#fafafb",
+        },
+        anti_flash_white: {
+          DEFAULT: "#f4f4f6",
+          100: "#2c2c36",
+          200: "#58586c",
+          300: "#88889e",
+          400: "#bebeca",
+          500: "#f4f4f6",
+          600: "#f6f6f8",
+          700: "#f8f8f9",
+          800: "#fbfbfb",
+          900: "#fdfdfd",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        "accordion-down": {
+          from: {
+            height: "0",
+          },
+          to: {
+            height: "var(--radix-accordion-content-height)",
+          },
+        },
+        "accordion-up": {
+          from: {
+            height: "var(--radix-accordion-content-height)",
+          },
+          to: {
+            height: "0",
+          },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+      },
+    },
   },
   plugins: [require("tailwindcss-animate")],
 };

@@ -1,33 +1,40 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import type { Message } from "@/stores/chat-store"
-import { cn } from "@/lib/utils"
-import DOMPurify from "dompurify"
-import { generateColor } from "@/lib/color"
-import { Pin, X } from "lucide-react"
+import { motion } from "framer-motion";
+import type { Message } from "@/stores/chat-store";
+import { cn } from "@/lib/utils";
+import DOMPurify from "dompurify";
+import { generateColor } from "@/lib/color";
+import { Pin, X } from "lucide-react";
 
 interface MessageProps {
-  message: Message
-  isOwn: boolean
-  isAdmin?: boolean
-  isPinned?: boolean
-  onPin?: (id: string) => void
-  onUnpin?: () => void
+  message: Message;
+  isOwn: boolean;
+  isAdmin?: boolean;
+  isPinned?: boolean;
+  onPin?: (id: string) => void;
+  onUnpin?: () => void;
 }
 
-export function ChatMessage({ message, isOwn, isAdmin, isPinned, onPin, onUnpin }: MessageProps) {
+export function ChatMessage({
+  message,
+  isOwn,
+  isAdmin,
+  isPinned,
+  onPin,
+  onUnpin,
+}: MessageProps) {
   const formatTime = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
-    }).format(new Date(date))
-  }
+    }).format(new Date(date));
+  };
 
-  const sanitizedContent = DOMPurify.sanitize(message.content)
+  const sanitizedContent = DOMPurify.sanitize(message.content);
 
-  const userColor = generateColor(message.username)
+  const userColor = generateColor(message.username);
 
   if (message.type === "system") {
     return (
@@ -43,7 +50,7 @@ export function ChatMessage({ message, isOwn, isAdmin, isPinned, onPin, onUnpin 
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />
       </motion.div>
-    )
+    );
   }
 
   return (
@@ -84,19 +91,32 @@ export function ChatMessage({ message, isOwn, isAdmin, isPinned, onPin, onUnpin 
         {!isOwn && (
           <div
             className="text-xs font-semibold mb-1"
-            style={{ color: userColor, backgroundColor: `${userColor}40`, padding: '2px 6px', borderRadius: '4px' }}
+            style={{
+              color: userColor,
+              backgroundColor: `${userColor}40`,
+              padding: "2px 6px",
+              borderRadius: "4px",
+            }}
           >
             {message.username}
           </div>
         )}
         <div
-          className={cn("text-sm break-words", isOwn ? "text-anti_flash_white-500" : "text-black-600")}
+          className={cn(
+            "text-sm break-words",
+            isOwn ? "text-anti_flash_white-500" : "text-black-600",
+          )}
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />
-        <div className={cn("text-[10px] mt-1 text-right", isOwn ? "text-platinum-400" : "text-taupe_gray-400")}>
+        <div
+          className={cn(
+            "text-[10px] mt-1 text-right",
+            isOwn ? "text-platinum-400" : "text-taupe_gray-400",
+          )}
+        >
           {formatTime(message.timestamp)}
         </div>
       </div>
     </motion.div>
-  )
+  );
 }

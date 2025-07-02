@@ -1,43 +1,43 @@
-import { create } from "zustand"
+import { create } from "zustand";
 
 export interface Message {
-  id: string
-  username: string
-  content: string
-  timestamp: Date
-  type: "user" | "system"
+  id: string;
+  username: string;
+  content: string;
+  timestamp: Date;
+  type: "user" | "system";
 }
 
 export interface User {
-  id: string
-  username: string
-  joinedAt: Date
+  id: string;
+  username: string;
+  joinedAt: Date;
 }
 
 interface ChatState {
   // Connection state
-  isConnected: boolean
-  isJoined: boolean
-  currentUsername: string | null
+  isConnected: boolean;
+  isJoined: boolean;
+  currentUsername: string | null;
 
   // Chat data
-  messages: Message[]
-  users: User[]
+  messages: Message[];
+  users: User[];
 
   // UI state
-  isJoining: boolean
-  joinError: string | null
+  isJoining: boolean;
+  joinError: string | null;
 
   // Actions
-  setConnected: (connected: boolean) => void
-  setJoined: (joined: boolean) => void
-  setCurrentUsername: (username: string | null) => void
-  setMessages: (messages: Message[]) => void
-  addMessage: (message: Message) => void
-  setUsers: (users: User[]) => void
-  setJoining: (joining: boolean) => void
-  setJoinError: (error: string | null) => void
-  reset: () => void
+  setConnected: (connected: boolean) => void;
+  setJoined: (joined: boolean) => void;
+  setCurrentUsername: (username: string | null) => void;
+  setMessages: (messages: Message[]) => void;
+  addMessage: (message: Message) => void;
+  setUsers: (users: User[]) => void;
+  setJoining: (joining: boolean) => void;
+  setJoinError: (error: string | null) => void;
+  reset: () => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -72,4 +72,4 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isJoining: false,
       joinError: null,
     }),
-}))
+}));

@@ -1,24 +1,37 @@
-"use client"
+"use client";
 
-import { motion, AnimatePresence } from "framer-motion"
-import type { User } from "@/stores/chat-store"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion";
+import type { User } from "@/stores/chat-store";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users } from "lucide-react";
 
 interface UsersListProps {
-  users: User[]
-  currentUsername: string
-  isCollapsed: boolean
-  onToggle: () => void
+  users: User[];
+  currentUsername: string;
+  isCollapsed: boolean;
+  onToggle: () => void;
 }
 
-export function UsersList({ users, currentUsername, isCollapsed, onToggle }: UsersListProps) {
+export function UsersList({
+  users,
+  currentUsername,
+  isCollapsed,
+  onToggle,
+}: UsersListProps) {
   return (
-    <Card className={`flex flex-col min-h-0 flex-1 bg-anti_flash_white-500 dark:bg-black-100 border-taupe_gray-200 shadow-none ${isCollapsed ? "w-16" : "w-full"}`}>
-      <CardHeader className={`pb-3 flex flex-row items-center ${isCollapsed ? "justify-center" : "justify-between"} border-b border-taupe_gray-200 bg-anti_flash_white-500 dark:bg-black-100`}>
-        <CardTitle className={`text-lg flex items-center gap-2 text-dim_gray-400 ${isCollapsed ? "hidden" : ""}`}>
+    <Card
+      className={`flex flex-col min-h-0 flex-1 bg-anti_flash_white-500 dark:bg-black-100 border-taupe_gray-200 shadow-none ${isCollapsed ? "w-16" : "w-full"}`}
+    >
+      <CardHeader
+        className={`pb-3 flex flex-row items-center ${isCollapsed ? "justify-center" : "justify-between"} border-b border-taupe_gray-200 bg-anti_flash_white-500 dark:bg-black-100`}
+      >
+        <CardTitle
+          className={`text-lg flex items-center gap-2 text-dim_gray-400 ${isCollapsed ? "hidden" : ""}`}
+        >
           <Users className="w-5 h-5" />
-          <span className="font-semibold text-dim_gray-500">Online ({users.length})</span>
+          <span className="font-semibold text-dim_gray-500">
+            Online ({users.length})
+          </span>
         </CardTitle>
         <button
           className="ml-auto text-taupe_gray-400 hover:text-dim_gray-400 transition-colors"
@@ -51,7 +64,11 @@ export function UsersList({ users, currentUsername, isCollapsed, onToggle }: Use
                       scale: [1, 1.2, 1],
                       opacity: [1, 0.7, 1],
                     }}
-                    transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 1.5,
+                      ease: "easeInOut",
+                    }}
                   />
                   <span
                     className={`text-sm ${
@@ -70,10 +87,12 @@ export function UsersList({ users, currentUsername, isCollapsed, onToggle }: Use
         </CardContent>
       ) : (
         <CardContent className="pt-0 flex flex-col items-center justify-center h-full">
-          <span className="text-2xl font-bold text-dim_gray-500">{users.length}</span>
+          <span className="text-2xl font-bold text-dim_gray-500">
+            {users.length}
+          </span>
           <span className="text-xs text-dim_gray-400">Online</span>
         </CardContent>
       )}
     </Card>
-  )
+  );
 }

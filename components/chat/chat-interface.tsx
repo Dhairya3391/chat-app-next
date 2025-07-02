@@ -1,44 +1,49 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { useChatStore } from "@/stores/chat-store"
-import { ChatMessage } from "./message"
-import { UsersList } from "./users-list"
-import { MessageInput } from "./message-input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MessageCircle, Wifi, WifiOff, Pin } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
-import bannedWords from '../../bannedWords.json' assert { type: 'json' }
-import { socketManager } from "@/lib/socket"
+import { useEffect, useRef, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useChatStore } from "@/stores/chat-store";
+import type { Message, User } from "@/stores/chat-store";
+import { ChatMessage } from "./message";
+import { UsersList } from "./users-list";
+import { MessageInput } from "./message-input";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { MessageCircle, Wifi, WifiOff, Pin } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import bannedWords from "../../bannedWords.json" assert { type: "json" };
+import { socketManager } from "@/lib/socket";
 
 interface ChatInterfaceProps {
-  onSendMessage: (message: string) => void
-  isAdmin?: boolean
+  onSendMessage: (message: string) => void;
+  isAdmin?: boolean;
 }
 
 export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
-  const { messages, users, currentUsername, isConnected, setMessages, setUsers } = useChatStore()
-  const { toast } = useToast()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [connectionToastDisplayed, setConnectionToastDisplayed] = useState(false)
-  const [bannedUntil, setBannedUntil] = useState<Date | null>(null)
-  const [bannedUsers, setBannedUsers] = useState<{ [username: string]: Date }>({})
-  const [pinnedMessage, setPinnedMessage] = useState<any>(null)
+  const { messages, users, currentUsername, isConnected, setMessages } =
+    useChatStore();
+  const { toast } = useToast();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [connectionToastDisplayed, setConnectionToastDisplayed] =
+    useState(false);
+  const [bannedUntil, setBannedUntil] = useState<Date | null>(null);
+  const [bannedUsers, setBannedUsers] = useState<{ [username: string]: Date }>(
+    {},
+  );
+  const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Ref map for scrolling to messages
-  const messageRefs = useRef<{ [id: string]: HTMLDivElement | null }>({})
+  const messageRefs = useRef<{ [id: string]: HTMLDivElement | null }>({});
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     if (!isConnected && !connectionToastDisplayed) {
@@ -46,276 +51,330 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
         title: "Disconnected",
         description: "You are not connected to the chat server.",
         variant: "destructive",
-      })
-      setConnectionToastDisplayed(true)
+      });
+      setConnectionToastDisplayed(true);
     } else if (isConnected && connectionToastDisplayed) {
       toast({
         title: "Connected",
         description: "You are now connected to the chat server.",
         variant: "default",
-      })
-      setConnectionToastDisplayed(false)
+      });
+      setConnectionToastDisplayed(false);
     }
-  }, [isConnected, connectionToastDisplayed, toast])
+  }, [isConnected, connectionToastDisplayed, toast]);
 
   // Focus input on '/' key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
-        e.key === '/' &&
-        !(document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA'))
+        e.key === "/" &&
+        !(
+          document.activeElement &&
+          (document.activeElement.tagName === "INPUT" ||
+            document.activeElement.tagName === "TEXTAREA")
+        )
       ) {
-        e.preventDefault()
-        inputRef.current?.focus()
+        e.preventDefault();
+        inputRef.current?.focus();
       }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev)
-  }
+    setIsSidebarOpen((prev) => !prev);
+  };
 
   // Load bans from localStorage on mount/username change
   useEffect(() => {
-    const now = Date.now()
-    const newBannedUsers: { [username: string]: Date } = {}
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('ban-')) {
-        const username = key.replace('ban-', '')
-        const expiry = parseInt(localStorage.getItem(key) || '0', 10)
+    const now = Date.now();
+    const newBannedUsers: { [username: string]: Date } = {};
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("ban-")) {
+        const username = key.replace("ban-", "");
+        const expiry = parseInt(localStorage.getItem(key) || "0", 10);
         if (expiry > now) {
-          newBannedUsers[username] = new Date(expiry)
+          newBannedUsers[username] = new Date(expiry);
         } else {
-          localStorage.removeItem(key)
+          localStorage.removeItem(key);
         }
       }
-    })
-    setBannedUsers(newBannedUsers)
-  }, [currentUsername])
+    });
+    setBannedUsers(newBannedUsers);
+  }, [currentUsername]);
 
   // Helper: is current user banned?
   const isCurrentUserBanned = useMemo(() => {
-    if (!currentUsername) return false
+    if (!currentUsername) return false;
     // Check localStorage for ban
-    const expiry = localStorage.getItem('ban-' + currentUsername)
+    const expiry = localStorage.getItem("ban-" + currentUsername);
     if (expiry && parseInt(expiry, 10) > Date.now()) {
-      return true
+      return true;
     }
-    const until = bannedUsers[currentUsername]
-    return until && new Date() < until
-  }, [bannedUsers, currentUsername])
+    const until = bannedUsers[currentUsername];
+    return until && new Date() < until;
+  }, [bannedUsers, currentUsername]);
 
   // Helper to check for banned words
   const containsBannedWord = (text: string) => {
-    return (bannedWords as string[]).some((word: string) => new RegExp(`\\b${word}\\b`, 'i').test(text))
-  }
+    return (bannedWords as string[]).some((word: string) =>
+      new RegExp(`\\b${word}\\b`, "i").test(text),
+    );
+  };
 
   // Listen for pin/unpin events from server
   useEffect(() => {
-    const socket = socketManager.getSocket()
-    if (!socket) return
-    const handlePin = (msg: any) => setPinnedMessage(msg)
-    const handleUnpin = () => setPinnedMessage(null)
-    socket.on("pin-message", handlePin)
-    socket.on("unpin-message", handleUnpin)
+    const socket = socketManager.getSocket();
+    if (!socket) return;
+    const handlePin = (msg: Message) => setPinnedMessage(msg);
+    const handleUnpin = () => setPinnedMessage(null);
+    socket.on("pin-message", handlePin);
+    socket.on("unpin-message", handleUnpin);
     return () => {
-      socket.off("pin-message", handlePin)
-      socket.off("unpin-message", handleUnpin)
-    }
-  }, [])
+      socket.off("pin-message", handlePin);
+      socket.off("unpin-message", handleUnpin);
+    };
+  }, []);
 
   // On join, set pinned message from server
   useEffect(() => {
-    const socket = socketManager.getSocket()
-    if (!socket) return
-    const handleJoinSuccess = (data: any) => {
-      if (data.pinnedMessage) setPinnedMessage(data.pinnedMessage)
-    }
-    socket.on("join-success", handleJoinSuccess)
-    return () => { socket.off("join-success", handleJoinSuccess) }
-  }, [])
+    const socket = socketManager.getSocket();
+    if (!socket) return;
+    const handleJoinSuccess = (data: { pinnedMessage?: Message }) => {
+      if (data.pinnedMessage) setPinnedMessage(data.pinnedMessage);
+    };
+    socket.on("join-success", handleJoinSuccess);
+    return () => {
+      socket.off("join-success", handleJoinSuccess);
+    };
+  }, []);
 
   // Pin a message (admin only)
   const handlePinMessage = (msgId: string) => {
-    const socket = socketManager.getSocket()
-    if (socket) socket.emit("admin-pin-message", msgId)
-  }
+    const socket = socketManager.getSocket();
+    if (socket) socket.emit("admin-pin-message", msgId);
+  };
   // Unpin message (admin only)
   const handleUnpinMessage = () => {
-    const socket = socketManager.getSocket()
-    if (socket) socket.emit("admin-unpin-message")
-  }
+    const socket = socketManager.getSocket();
+    if (socket) socket.emit("admin-unpin-message");
+  };
 
   // Scroll to pinned message
   const scrollToPinned = () => {
     if (pinnedMessage && messageRefs.current[pinnedMessage.id]) {
-      messageRefs.current[pinnedMessage.id]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      messageRefs.current[pinnedMessage.id]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
     }
-  }
+  };
 
   // Admin command handler
   const handleSendMessage = async (message: string) => {
     if (isAdmin) {
       // Remove message length/ban limits for admin
-      if (message.trim() === '/clear') {
-        const socket = socketManager.getSocket()
-        if (socket) socket.emit("admin-clear-messages")
-        return
+      if (message.trim() === "/clear") {
+        const socket = socketManager.getSocket();
+        if (socket) socket.emit("admin-clear-messages");
+        return;
       }
-      if (message.trim().startsWith('/ban ')) {
-        const match = message.trim().match(/^\/ban\s+@?(\w+)/)
+      if (message.trim().startsWith("/ban ")) {
+        const match = message.trim().match(/^\/ban\s+@?(\w+)/);
         if (match) {
-          const usernameToBan = match[1]
-          const socket = socketManager.getSocket()
-          if (socket) socket.emit("admin-ban-user", { username: usernameToBan, duration: 2 * 60 * 1000 })
-          return
+          const usernameToBan = match[1];
+          const socket = socketManager.getSocket();
+          if (socket)
+            socket.emit("admin-ban-user", {
+              username: usernameToBan,
+              duration: 2 * 60 * 1000,
+            });
+          return;
         }
       }
-      if (message.trim().startsWith('/unban ')) {
-        const match = message.trim().match(/^\/unban\s+@?(\w+)/)
+      if (message.trim().startsWith("/unban ")) {
+        const match = message.trim().match(/^\/unban\s+@?(\w+)/);
         if (match) {
-          const usernameToUnban = match[1]
-          const socket = socketManager.getSocket()
-          if (socket) socket.emit("admin-unban-user", usernameToUnban)
-          return
+          const usernameToUnban = match[1];
+          const socket = socketManager.getSocket();
+          if (socket) socket.emit("admin-unban-user", usernameToUnban);
+          return;
         }
       }
-      if (message.trim().startsWith('/kick ')) {
-        const match = message.trim().match(/^\/kick\s+@?(\w+)/)
+      if (message.trim().startsWith("/kick ")) {
+        const match = message.trim().match(/^\/kick\s+@?(\w+)/);
         if (match) {
-          const usernameToKick = match[1]
-          const socket = socketManager.getSocket()
-          if (socket) socket.emit("admin-kick-user", usernameToKick)
-          return
+          const usernameToKick = match[1];
+          const socket = socketManager.getSocket();
+          if (socket) socket.emit("admin-kick-user", usernameToKick);
+          return;
         }
       }
-      if (message.trim().startsWith('/announce ')) {
-        const content = message.trim().replace('/announce ', '')
-        const socket = socketManager.getSocket()
-        if (socket) socket.emit("admin-announce", content)
-        return
+      if (message.trim().startsWith("/announce ")) {
+        const content = message.trim().replace("/announce ", "");
+        const socket = socketManager.getSocket();
+        if (socket) socket.emit("admin-announce", content);
+        return;
       }
-      if (message.trim() === '/users') {
-        const socket = socketManager.getSocket()
-        if (socket) socket.emit("admin-list-users")
-        return
+      if (message.trim() === "/users") {
+        const socket = socketManager.getSocket();
+        if (socket) socket.emit("admin-list-users");
+        return;
       }
     }
     // Ban logic for normal users
     if (!isAdmin) {
       if (isCurrentUserBanned) {
-        const expiry = localStorage.getItem('ban-' + currentUsername)
-        let seconds = 0
+        const expiry = localStorage.getItem("ban-" + currentUsername);
+        let seconds = 0;
         if (expiry) {
-          seconds = Math.ceil((parseInt(expiry, 10) - Date.now()) / 1000)
+          seconds = Math.ceil((parseInt(expiry, 10) - Date.now()) / 1000);
         }
-        toast({ title: 'Banned', description: `You are banned for ${seconds} more seconds.`, variant: 'destructive' })
-        return
+        toast({
+          title: "Banned",
+          description: `You are banned for ${seconds} more seconds.`,
+          variant: "destructive",
+        });
+        return;
       }
       if (bannedUntil && new Date() < bannedUntil) {
-        const seconds = Math.ceil((bannedUntil.getTime() - Date.now()) / 1000)
-        toast({ title: 'Banned', description: `You are banned for ${seconds} more seconds.`, variant: 'destructive' })
-        return
+        const seconds = Math.ceil((bannedUntil.getTime() - Date.now()) / 1000);
+        toast({
+          title: "Banned",
+          description: `You are banned for ${seconds} more seconds.`,
+          variant: "destructive",
+        });
+        return;
       }
       if (containsBannedWord(message)) {
-        const banTime = new Date(Date.now() + 2 * 60 * 1000)
-        setBannedUntil(banTime)
+        const banTime = new Date(Date.now() + 2 * 60 * 1000);
+        setBannedUntil(banTime);
         if (currentUsername) {
-          localStorage.setItem('ban-' + currentUsername, String(banTime.getTime()))
+          localStorage.setItem(
+            "ban-" + currentUsername,
+            String(banTime.getTime()),
+          );
         }
-        toast({ title: 'Banned', description: 'You used a banned word and are banned for 2 minutes.', variant: 'destructive' })
+        toast({
+          title: "Banned",
+          description: "You used a banned word and are banned for 2 minutes.",
+          variant: "destructive",
+        });
         setMessages([
           ...messages,
           {
             id: `system-${Date.now()}`,
-            username: 'system',
+            username: "system",
             content: `${currentUsername} was banned for using inappropriate language.`,
             timestamp: new Date(),
-            type: 'system',
+            type: "system",
           },
-        ])
-        return
+        ]);
+        return;
       }
       // Enforce message length for non-admins
       if (message.length > 500) {
-        toast({ title: 'Too long', description: 'Message too long (max 500 characters).', variant: 'destructive' })
-        return
+        toast({
+          title: "Too long",
+          description: "Message too long (max 500 characters).",
+          variant: "destructive",
+        });
+        return;
       }
     }
-    await onSendMessage(message)
-  }
+    await onSendMessage(message);
+  };
 
   // Listen for clear-messages event from server
   useEffect(() => {
-    const socket = socketManager.getSocket()
-    if (!socket) return
-    const handleClear = (sysMsg: any) => {
-      setMessages([sysMsg])
-    }
-    socket.on("clear-messages", handleClear)
-    return () => { socket.off("clear-messages", handleClear) }
-  }, [setMessages])
+    const socket = socketManager.getSocket();
+    if (!socket) return;
+    const handleClear = (sysMsg: Message) => {
+      setMessages([sysMsg]);
+    };
+    socket.on("clear-messages", handleClear);
+    return () => {
+      socket.off("clear-messages", handleClear);
+    };
+  }, [setMessages]);
 
   // Listen for ban/unban events from server
   useEffect(() => {
-    const socket = socketManager.getSocket()
-    if (!socket) return
-    const handleBan = ({ username, until }: any) => {
-      setBannedUsers(prev => ({ ...prev, [username]: new Date(until) }))
-    }
+    const socket = socketManager.getSocket();
+    if (!socket) return;
+    const handleBan = ({
+      username,
+      until,
+    }: {
+      username: string;
+      until: number;
+    }) => {
+      setBannedUsers((prev) => ({ ...prev, [username]: new Date(until) }));
+    };
     const handleUnban = (username: string) => {
-      setBannedUsers(prev => {
-        const copy = { ...prev }
-        delete copy[username]
-        return copy
-      })
+      setBannedUsers((prev) => {
+        const copy = { ...prev };
+        delete copy[username];
+        return copy;
+      });
       if (currentUsername === username) {
-        localStorage.removeItem('ban-' + username)
+        localStorage.removeItem("ban-" + username);
       }
-    }
-    socket.on("ban-user", handleBan)
-    socket.on("unban-user", handleUnban)
+    };
+    socket.on("ban-user", handleBan);
+    socket.on("unban-user", handleUnban);
     return () => {
-      socket.off("ban-user", handleBan)
-      socket.off("unban-user", handleUnban)
-    }
-  }, [currentUsername])
+      socket.off("ban-user", handleBan);
+      socket.off("unban-user", handleUnban);
+    };
+  }, [currentUsername]);
 
   // Listen for kick event from server
   useEffect(() => {
-    const socket = socketManager.getSocket()
-    if (!socket) return
+    const socket = socketManager.getSocket();
+    if (!socket) return;
     const handleKicked = () => {
-      window.location.reload()
-    }
-    socket.on("kicked", handleKicked)
-    return () => { socket.off("kicked", handleKicked) }
-  }, [])
+      window.location.reload();
+    };
+    socket.on("kicked", handleKicked);
+    return () => {
+      socket.off("kicked", handleKicked);
+    };
+  }, []);
 
   // Listen for list-users event (admin only)
   useEffect(() => {
-    if (!isAdmin) return
-    const socket = socketManager.getSocket()
-    if (!socket) return
-    const handleListUsers = (users: any[]) => {
-      toast({ title: 'Users', description: users.map(u => u.username).join(', '), variant: 'default', duration: 6000 })
-    }
-    socket.on("list-users", handleListUsers)
-    return () => { socket.off("list-users", handleListUsers) }
-  }, [isAdmin, toast])
+    if (!isAdmin) return;
+    const socket = socketManager.getSocket();
+    if (!socket) return;
+    const handleListUsers = (users: User[]) => {
+      toast({
+        title: "Users",
+        description: users.map((u) => u.username).join(", "),
+        variant: "default",
+        duration: 6000,
+      });
+    };
+    socket.on("list-users", handleListUsers);
+    return () => {
+      socket.off("list-users", handleListUsers);
+    };
+  }, [isAdmin, toast]);
 
   // For admin: autocomplete usernames for /ban
-  const [banInput, setBanInput] = useState("")
-  const [showBanAutocomplete, setShowBanAutocomplete] = useState(false)
+  const [banInput, setBanInput] = useState("");
+  const [showBanAutocomplete, setShowBanAutocomplete] = useState(false);
   const banCandidates = useMemo(() => {
-    if (!isAdmin || !banInput.startsWith("/ban ")) return []
-    const search = banInput.replace("/ban ", "").toLowerCase()
+    if (!isAdmin || !banInput.startsWith("/ban ")) return [];
+    const search = banInput.replace("/ban ", "").toLowerCase();
     return users
-      .map(u => u.username)
-      .filter(name => name.toLowerCase().includes(search) && name !== currentUsername)
-  }, [banInput, users, isAdmin, currentUsername])
+      .map((u) => u.username)
+      .filter(
+        (name) =>
+          name.toLowerCase().includes(search) && name !== currentUsername,
+      );
+  }, [banInput, users, isAdmin, currentUsername]);
 
   return (
     <div className="h-screen overflow-hidden bg-anti_flash_white-500 dark:bg-black-100 p-0 md:p-4 transition-colors duration-300">
@@ -323,19 +382,25 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
         className={`max-w-7xl mx-auto grid grid-cols-1 ${isSidebarOpen ? "lg:grid-cols-4" : "lg:grid-cols-[1fr_auto]"} gap-0 md:gap-4 h-full`}
       >
         {/* Main Chat Area */}
-        <div className={`${isSidebarOpen ? "lg:col-span-3" : "lg:col-span-1"} flex flex-col min-h-0 h-full`}>
+        <div
+          className={`${isSidebarOpen ? "lg:col-span-3" : "lg:col-span-1"} flex flex-col min-h-0 h-full`}
+        >
           <Card className="flex-1 flex flex-col bg-platinum-500 border-taupe_gray-200 shadow-none min-h-0 h-full">
             {/* Fixed Header */}
             <CardHeader className="shrink-0 sticky top-0 z-10 pb-2 border-b border-taupe_gray-200 bg-anti_flash_white-500 dark:bg-black-100">
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-dim_gray-400">
                   <MessageCircle className="w-5 h-5" />
-                  <span className="font-semibold text-dim_gray-500">Global Chat</span>
+                  <span className="font-semibold text-dim_gray-500">
+                    Global Chat
+                  </span>
                 </div>
                 <button
                   className="block lg:hidden px-2 py-1 rounded text-taupe_gray-400 hover:bg-platinum-100"
                   onClick={toggleSidebar}
-                  aria-label={isSidebarOpen ? "Hide online users" : "Show online users"}
+                  aria-label={
+                    isSidebarOpen ? "Hide online users" : "Show online users"
+                  }
                 >
                   {isSidebarOpen ? "Hide Users" : "Show Users"}
                 </button>
@@ -366,13 +431,20 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
                 >
                   <Pin className="w-4 h-4 text-black dark:text-white shrink-0" />
                   <div className="flex-1 truncate">
-                    <span className="font-semibold text-black dark:text-white mr-2">Pinned:</span>
-                    <span className="text-black dark:text-white/80 truncate">{pinnedMessage.content}</span>
+                    <span className="font-semibold text-black dark:text-white mr-2">
+                      Pinned:
+                    </span>
+                    <span className="text-black dark:text-white/80 truncate">
+                      {pinnedMessage.content}
+                    </span>
                   </div>
                   {isAdmin && (
                     <button
                       className="ml-2 p-1 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-black dark:text-white opacity-80 group-hover:opacity-100 transition"
-                      onClick={e => { e.stopPropagation(); handleUnpinMessage(); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnpinMessage();
+                      }}
                       title="Unpin"
                     >
                       <Pin className="w-4 h-4 rotate-45 text-black dark:text-white" />
@@ -400,13 +472,22 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
                       {messages.map((message) => (
                         <div
                           key={message.id}
-                          ref={el => { messageRefs.current[message.id] = el }}
+                          ref={(el) => {
+                            messageRefs.current[message.id] = el;
+                          }}
                         >
                           <ChatMessage
                             message={message}
-                            isOwn={message.username === currentUsername && message.type === "user"}
+                            isOwn={
+                              message.username === (currentUsername || "") &&
+                              message.type === "user"
+                            }
                             isAdmin={isAdmin}
-                            isPinned={pinnedMessage && pinnedMessage.id === message.id}
+                            isPinned={
+                              !!(
+                                pinnedMessage && pinnedMessage.id === message.id
+                              )
+                            }
                             onPin={handlePinMessage}
                             onUnpin={handleUnpinMessage}
                           />
@@ -430,14 +511,14 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
                 {/* Admin autocomplete dropdown for /ban */}
                 {isAdmin && showBanAutocomplete && banCandidates.length > 0 && (
                   <div className="absolute left-0 right-0 bg-white border rounded shadow z-50 mt-1 max-h-40 overflow-y-auto">
-                    {banCandidates.map(name => (
+                    {banCandidates.map((name) => (
                       <div
                         key={name}
                         className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                         onClick={() => {
-                          setBanInput(`/ban ${name}`)
-                          setShowBanAutocomplete(false)
-                          inputRef.current?.focus()
+                          setBanInput(`/ban ${name}`);
+                          setShowBanAutocomplete(false);
+                          inputRef.current?.focus();
                         }}
                       >
                         {name}
@@ -460,10 +541,15 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
           className={`${isSidebarOpen ? "lg:col-span-1" : "lg:col-span-1 lg:w-16"} flex flex-col min-h-0 bg-anti_flash_white-500 dark:bg-black-100 border-l border-taupe_gray-200`}
         >
           <div className="flex-1 min-h-0 flex flex-col">
-            <UsersList users={users} currentUsername={currentUsername || ""} isCollapsed={!isSidebarOpen} onToggle={toggleSidebar} />
+            <UsersList
+              users={users}
+              currentUsername={currentUsername || ""}
+              isCollapsed={!isSidebarOpen}
+              onToggle={toggleSidebar}
+            />
           </div>
         </motion.div>
       </div>
     </div>
-  )
+  );
 }
