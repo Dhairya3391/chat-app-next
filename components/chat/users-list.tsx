@@ -14,7 +14,7 @@ interface UsersListProps {
 
 export function UsersList({ users, currentUsername, isCollapsed, onToggle }: UsersListProps) {
   return (
-    <Card className={`h-full bg-anti_flash_white-500 dark:bg-black-100 border-taupe_gray-200 shadow-none ${isCollapsed ? "w-16" : "w-full"}`}>
+    <Card className={`flex flex-col min-h-0 flex-1 bg-anti_flash_white-500 dark:bg-black-100 border-taupe_gray-200 shadow-none ${isCollapsed ? "w-16" : "w-full"}`}>
       <CardHeader className={`pb-3 flex flex-row items-center ${isCollapsed ? "justify-center" : "justify-between"} border-b border-taupe_gray-200 bg-anti_flash_white-500 dark:bg-black-100`}>
         <CardTitle className={`text-lg flex items-center gap-2 text-dim_gray-400 ${isCollapsed ? "hidden" : ""}`}>
           <Users className="w-5 h-5" />
@@ -29,8 +29,8 @@ export function UsersList({ users, currentUsername, isCollapsed, onToggle }: Use
         </button>
       </CardHeader>
       {!isCollapsed ? (
-        <CardContent className="pt-0 max-h-96 overflow-y-auto">
-          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+        <CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
+          <div className="space-y-2">
             <AnimatePresence>
               {users.map((user) => (
                 <motion.div
