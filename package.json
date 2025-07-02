@@ -46,6 +46,7 @@
     "dompurify": "^3.2.6",
     "embla-carousel-react": "8.5.1",
     "framer-motion": "latest",
+    "global-chat": "link:",
     "http": "latest",
     "immer": "latest",
     "input-otp": "1.4.1",

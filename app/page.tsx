@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useChatStore } from "@/stores/chat-store"
 import { socketManager } from "@/lib/socket"
 import { UsernameForm } from "@/components/chat/username-form"
@@ -24,6 +24,7 @@ export default function ChatPage() {
     reset,
   } = useChatStore()
   const { toast } = useToast()
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     // Remove the automatic socket connection here
@@ -35,7 +36,8 @@ export default function ChatPage() {
     }
   }, [])
 
-  const handleJoin = (username: string) => {
+  const handleJoin = (username: string, isAdminFlag: boolean) => {
+    setIsAdmin(isAdminFlag)
     const socket = socketManager.connect(username)
     setJoining(true)
     setJoinError(null)
@@ -153,5 +155,5 @@ export default function ChatPage() {
     return <UsernameForm onSubmit={handleJoin} isLoading={isJoining} error={joinError} />
   }
 
-  return <ChatInterface onSendMessage={handleSendMessage} />
+  return <ChatInterface onSendMessage={handleSendMessage} isAdmin={isAdmin} />
 }

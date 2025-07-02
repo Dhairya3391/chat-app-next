@@ -12,6 +12,7 @@ const messages: Array<{
   timestamp: Date
   type: "user" | "system"
 }> = []
+let pinnedMessage: null | { id: string; username: string; content: string; timestamp: Date; type: string } = null
 
 let io: ServerIO | undefined
 
@@ -29,6 +30,103 @@ const SocketHandler = (req: any, res: any) => {
 
     io.on("connection", (socket) => {
       console.log("User connected:", socket.id)
+
+      // --- Admin Commands ---
+      // Pin a message (by ID)
+      socket.on("admin-pin-message", (msgId) => {
+        const msg = messages.find(m => m.id === msgId)
+        if (msg) {
+          pinnedMessage = msg
+          if (io) io.emit("pin-message", msg)
+        }
+      })
+
+      // Unpin the current pinned message
+      socket.on("admin-unpin-message", () => {
+        pinnedMessage = null
+        if (io) io.emit("unpin-message")
+      })
+
+      // Clear all messages for everyone
+      socket.on("admin-clear-messages", () => {
+        messages.length = 0
+        const sysMsg = {
+          id: `system-${Date.now()}-${Math.random()}`,
+          username: "System",
+          content: `Chat was cleared by admin` ,
+          timestamp: new Date(),
+          type: "system" as const,
+        }
+        messages.push(sysMsg)
+        if (io) io.emit("clear-messages", sysMsg)
+      })
+
+      // Ban a user for everyone
+      socket.on("admin-ban-user", ({ username, duration }) => {
+        // Broadcast ban event to all clients
+        if (io) io.emit("ban-user", { username, until: Date.now() + duration })
+        // System message
+        const sysMsg = {
+          id: `system-${Date.now()}-${Math.random()}`,
+          username: "System",
+          content: `@${username} was banned by admin for ${Math.round(duration/60000)} min`,
+          timestamp: new Date(),
+          type: "system" as const,
+        }
+        messages.push(sysMsg)
+        if (io) io.emit("new-message", sysMsg)
+      })
+
+      // Unban a user for everyone
+      socket.on("admin-unban-user", (username) => {
+        if (io) io.emit("unban-user", username)
+        const sysMsg = {
+          id: `system-${Date.now()}-${Math.random()}`,
+          username: "System",
+          content: `@${username} was unbanned by admin`,
+          timestamp: new Date(),
+          type: "system" as const,
+        }
+        messages.push(sysMsg)
+        if (io) io.emit("new-message", sysMsg)
+      })
+
+      // Kick a user (force disconnect)
+      socket.on("admin-kick-user", (username) => {
+        const user = Array.from(connectedUsers.values()).find(u => u.username === username)
+        if (user && io) {
+          io.to(user.id).emit("kicked")
+          connectedUsers.delete(user.id)
+          const sysMsg = {
+            id: `system-${Date.now()}-${Math.random()}`,
+            username: "System",
+            content: `@${username} was kicked by admin`,
+            timestamp: new Date(),
+            type: "system" as const,
+          }
+          messages.push(sysMsg)
+          io.emit("new-message", sysMsg)
+          io.emit("user-left", { userId: user.id, message: sysMsg })
+        }
+      })
+
+      // Announce a message to all users
+      socket.on("admin-announce", (content) => {
+        const sysMsg = {
+          id: `system-${Date.now()}-${Math.random()}`,
+          username: "System",
+          content: `[Announcement] ${content}`,
+          timestamp: new Date(),
+          type: "system" as const,
+        }
+        messages.push(sysMsg)
+        if (io) io.emit("new-message", sysMsg)
+      })
+
+      // List all users (send to admin only)
+      socket.on("admin-list-users", () => {
+        socket.emit("list-users", Array.from(connectedUsers.values()))
+      })
 
       // Handle username validation and user join
       socket.on("join", (username: string) => {
@@ -77,6 +175,7 @@ const SocketHandler = (req: any, res: any) => {
             username: userData.username,
             users: Array.from(connectedUsers.values()),
             messages: messages.slice(-50), // Send last 50 messages
+            pinnedMessage,
           })
 
           // Broadcast system message to all other users

@@ -11,13 +11,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, MessageCircle } from "lucide-react"
 
 interface UsernameFormProps {
-  onSubmit: (username: string) => void
+  onSubmit: (username: string, isAdmin: boolean) => void
   isLoading: boolean
   error: string | null
 }
 
 export function UsernameForm({ onSubmit, isLoading, error }: UsernameFormProps) {
   const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [localError, setLocalError] = useState<string | null>(null)
 
   useEffect(() => {
     const savedUsername = localStorage.getItem("chat-username")
@@ -26,11 +29,29 @@ export function UsernameForm({ onSubmit, isLoading, error }: UsernameFormProps) 
     }
   }, [])
 
+  useEffect(() => {
+    if (username.trim() === "noobokay") {
+      setShowPassword(true)
+    } else {
+      setShowPassword(false)
+      setPassword("")
+      setLocalError(null)
+    }
+  }, [username])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (username.trim() && !isLoading) {
+    if (!username.trim() || isLoading) return
+    if (username.trim() === "noobokay") {
+      if (password !== "noobokay") {
+        setLocalError("Incorrect password for admin user.")
+        return
+      }
       localStorage.setItem("chat-username", username.trim())
-      onSubmit(username.trim())
+      onSubmit(username.trim(), true)
+    } else {
+      localStorage.setItem("chat-username", username.trim())
+      onSubmit(username.trim(), false)
     }
   }
 
@@ -66,20 +87,32 @@ export function UsernameForm({ onSubmit, isLoading, error }: UsernameFormProps) 
                   <p className="text-xs text-gray-500 mt-1 text-center">{username.length}/20 characters</p>
                 )}
               </div>
+              {showPassword && (
+                <div>
+                  <Input
+                    type="password"
+                    placeholder="Enter admin password..."
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                    className="text-center text-lg"
+                  />
+                </div>
+              )}
 
-              {error && (
+              {(error || localError) && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                 >
                   <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
+                    <AlertDescription>{error || localError}</AlertDescription>
                   </Alert>
                 </motion.div>
               )}
 
-              <Button type="submit" className="w-full" disabled={!username.trim() || isLoading} size="lg">
+              <Button type="submit" className="w-full" disabled={!username.trim() || isLoading || (showPassword && !password)} size="lg">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
