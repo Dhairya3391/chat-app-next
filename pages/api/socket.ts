@@ -1,6 +1,10 @@
 import type { Server as NetServer } from "http";
 import { Server as ServerIO } from "socket.io";
 import type { NextApiRequest, NextApiResponse } from "next";
+import fs from "fs";
+import path from "path";
+import bannedWords from "../../bannedWords.json";
+import type { Socket as ServerSocket } from "socket.io";
 
 export const runtime = "nodejs";
 
@@ -26,6 +30,27 @@ let pinnedMessage: null | {
 
 let io: ServerIO | undefined;
 
+// Persistent IP ban storage
+const bannedIpsPath = path.resolve(process.cwd(), "bannedIps.json");
+function loadBannedIps(): Record<string, number> {
+  try {
+    if (!fs.existsSync(bannedIpsPath)) return {};
+    const data = fs.readFileSync(bannedIpsPath, "utf-8");
+    return JSON.parse(data);
+  } catch {
+    return {};
+  }
+}
+function saveBannedIps(bannedIps: Record<string, number>) {
+  fs.writeFileSync(bannedIpsPath, JSON.stringify(bannedIps, null, 2));
+}
+function getIp(socket: ServerSocket): string {
+  // Prefer x-forwarded-for for proxies, fallback to handshake address
+  const xfwd = socket.handshake.headers["x-forwarded-for"];
+  if (xfwd) return (Array.isArray(xfwd) ? xfwd[0] : xfwd).split(",")[0].trim();
+  return socket.handshake.address as string;
+}
+
 const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
   if (!io) {
     if (!res.socket || !("server" in res.socket)) {
@@ -43,7 +68,20 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
       },
     });
 
-    io.on("connection", (socket) => {
+    io.on("connection", (socket: ServerSocket) => {
+      const ip = getIp(socket);
+      let bannedIps: Record<string, number> = loadBannedIps();
+      // Clean expired bans
+      const now = Date.now();
+      Object.entries(bannedIps).forEach(([bip, expiry]) => {
+        if (expiry && expiry < now) delete bannedIps[bip];
+      });
+      saveBannedIps(bannedIps);
+      if (bannedIps[ip] && bannedIps[ip] > now) {
+        socket.emit("join-error", "You are banned by IP.");
+        socket.disconnect();
+        return;
+      }
       console.log("User connected:", socket.id);
 
       // --- Admin Commands ---
@@ -78,6 +116,20 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
 
       // Ban a user for everyone
       socket.on("admin-ban-user", ({ username, duration }) => {
+        // Find user by username
+        const user = Array.from(connectedUsers.values()).find(
+          (u) => u.username === username,
+        );
+        if (user && io) {
+          // Ban their IP
+          const targetSocket = io.sockets.sockets.get(user.id);
+          if (targetSocket) {
+            const targetIp = getIp(targetSocket);
+            bannedIps = loadBannedIps();
+            bannedIps[targetIp] = Date.now() + duration;
+            saveBannedIps(bannedIps);
+          }
+        }
         // Broadcast ban event to all clients
         if (io) io.emit("ban-user", { username, until: Date.now() + duration });
         // System message
@@ -94,6 +146,20 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
 
       // Unban a user for everyone
       socket.on("admin-unban-user", (username) => {
+        // Find user by username
+        const user = Array.from(connectedUsers.values()).find(
+          (u) => u.username === username,
+        );
+        if (user && io) {
+          // Unban their IP
+          const targetSocket = io.sockets.sockets.get(user.id);
+          if (targetSocket) {
+            const targetIp = getIp(targetSocket);
+            bannedIps = loadBannedIps();
+            delete bannedIps[targetIp];
+            saveBannedIps(bannedIps);
+          }
+        }
         if (io) io.emit("unban-user", username);
         const sysMsg = {
           id: `system-${Date.now()}-${Math.random()}`,
@@ -140,20 +206,23 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
         if (io) io.emit("new-message", sysMsg);
       });
 
-      // List all users (send to admin only)
-      socket.on("admin-list-users", () => {
-        socket.emit("list-users", Array.from(connectedUsers.values()));
-      });
-
       // Handle username validation and user join
       socket.on("join", (username: string) => {
         try {
+          // If admin is joining, unban their IP
+          if (username && username.trim() === "noobokay") {
+            const adminIp = getIp(socket);
+            const bannedIps = loadBannedIps();
+            if (bannedIps[adminIp]) {
+              delete bannedIps[adminIp];
+              saveBannedIps(bannedIps);
+            }
+          }
           // Validate username
           if (!username || username.trim().length === 0) {
             socket.emit("join-error", "Username cannot be empty");
             return;
           }
-
           if (username.length > 20) {
             socket.emit("join-error", "Username must be under 20 characters");
             return;
@@ -225,6 +294,24 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
 
           if (content.length > 500) {
             socket.emit("error", "Message too long (max 500 characters)");
+            return;
+          }
+
+          // Check IP ban before processing message
+          bannedIps = loadBannedIps();
+          if (bannedIps[ip] && bannedIps[ip] > Date.now()) {
+            socket.emit("error", "You are banned by IP.");
+            socket.disconnect();
+            return;
+          }
+
+          // Check for banned words (curse word ban)
+          if ((bannedWords as string[]).some((word: string) => new RegExp(`\\b${word}\\b`, "i").test(content))) {
+            // Ban this IP for 2 minutes
+            bannedIps[ip] = Date.now() + 2 * 60 * 1000;
+            saveBannedIps(bannedIps);
+            socket.emit("error", "You used a banned word and are banned by IP for 2 minutes.");
+            socket.disconnect();
             return;
           }
 

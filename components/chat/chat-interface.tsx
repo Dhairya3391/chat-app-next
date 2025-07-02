@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatStore } from "@/stores/chat-store";
-import type { Message, User } from "@/stores/chat-store";
+import type { Message } from "@/stores/chat-store";
 import { ChatMessage } from "./message";
 import { UsersList } from "./users-list";
 import { MessageInput } from "./message-input";
@@ -221,11 +221,6 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
         if (socket) socket.emit("admin-announce", content);
         return;
       }
-      if (message.trim() === "/users") {
-        const socket = socketManager.getSocket();
-        if (socket) socket.emit("admin-list-users");
-        return;
-      }
     }
     // Ban logic for normal users
     if (!isAdmin) {
@@ -348,25 +343,6 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
       socket.off("kicked", handleKicked);
     };
   }, []);
-
-  // Listen for list-users event (admin only)
-  useEffect(() => {
-    if (!isAdmin) return;
-    const socket = socketManager.getSocket();
-    if (!socket) return;
-    const handleListUsers = (users: User[]) => {
-      toast({
-        title: "Users",
-        description: users.map((u) => u.username).join(", "),
-        variant: "default",
-        duration: 6000,
-      });
-    };
-    socket.on("list-users", handleListUsers);
-    return () => {
-      socket.off("list-users", handleListUsers);
-    };
-  }, [isAdmin, toast]);
 
   // For admin: autocomplete usernames for /ban
   const [banInput, setBanInput] = useState("");
