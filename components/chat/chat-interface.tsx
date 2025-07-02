@@ -88,29 +88,32 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
 
   // Load bans from localStorage on mount/username change
   useEffect(() => {
-    const now = Date.now();
-    const newBannedUsers: { [username: string]: Date } = {};
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith("ban-")) {
-        const username = key.replace("ban-", "");
-        const expiry = parseInt(localStorage.getItem(key) || "0", 10);
-        if (expiry > now) {
-          newBannedUsers[username] = new Date(expiry);
-        } else {
-          localStorage.removeItem(key);
+    if (typeof window !== "undefined") {
+      const now = Date.now();
+      const newBannedUsers: { [username: string]: Date } = {};
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith("ban-")) {
+          const username = key.replace("ban-", "");
+          const expiry = parseInt(localStorage.getItem(key) || "0", 10);
+          if (expiry > now) {
+            newBannedUsers[username] = new Date(expiry);
+          } else {
+            localStorage.removeItem(key);
+          }
         }
-      }
-    });
-    setBannedUsers(newBannedUsers);
+      });
+      setBannedUsers(newBannedUsers);
+    }
   }, [currentUsername]);
 
   // Helper: is current user banned?
   const isCurrentUserBanned = useMemo(() => {
     if (!currentUsername) return false;
-    // Check localStorage for ban
-    const expiry = localStorage.getItem("ban-" + currentUsername);
-    if (expiry && parseInt(expiry, 10) > Date.now()) {
-      return true;
+    if (typeof window !== "undefined") {
+      const expiry = localStorage.getItem("ban-" + currentUsername);
+      if (expiry && parseInt(expiry, 10) > Date.now()) {
+        return true;
+      }
     }
     const until = bannedUsers[currentUsername];
     return until && new Date() < until;
@@ -226,10 +229,12 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
     // Ban logic for normal users
     if (!isAdmin) {
       if (isCurrentUserBanned) {
-        const expiry = localStorage.getItem("ban-" + currentUsername);
         let seconds = 0;
-        if (expiry) {
-          seconds = Math.ceil((parseInt(expiry, 10) - Date.now()) / 1000);
+        if (typeof window !== "undefined") {
+          const expiry = localStorage.getItem("ban-" + currentUsername);
+          if (expiry) {
+            seconds = Math.ceil((parseInt(expiry, 10) - Date.now()) / 1000);
+          }
         }
         toast({
           title: "Banned",
@@ -250,7 +255,7 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
       if (containsBannedWord(message)) {
         const banTime = new Date(Date.now() + 2 * 60 * 1000);
         setBannedUntil(banTime);
-        if (currentUsername) {
+        if (currentUsername && typeof window !== "undefined") {
           localStorage.setItem(
             "ban-" + currentUsername,
             String(banTime.getTime()),
@@ -318,7 +323,7 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
         delete copy[username];
         return copy;
       });
-      if (currentUsername === username) {
+      if (currentUsername === username && typeof window !== "undefined") {
         localStorage.removeItem("ban-" + username);
       }
     };
@@ -500,11 +505,33 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
               </div>
               {/* Fixed Input Bar */}
               <div className="shrink-0 sticky bottom-0 z-10 bg-anti_flash_white-500 dark:bg-black-100 border-t border-taupe_gray-200">
+                {/* Connection status and manual reconnect */}
+                {!isConnected && (
+                  <div className="flex items-center justify-center bg-red-100 text-red-700 py-2">
+                    <span className="mr-4">Disconnected from server.</span>
+                    <button
+                      className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                      onClick={() => {
+                        const savedUsername =
+                          typeof window !== "undefined"
+                            ? localStorage.getItem("chat-username")
+                            : null;
+                        if (savedUsername) {
+                          window.location.reload(); // Let the main page handle reconnect logic
+                        }
+                      }}
+                    >
+                      Rejoin Chat
+                    </button>
+                  </div>
+                )}
                 <MessageInput
                   ref={inputRef}
                   onSendMessage={handleSendMessage}
                   disabled={!isConnected || isCurrentUserBanned}
-                  bannedUntil={bannedUntil}
+                  bannedUntil={
+                    isCurrentUserBanned ? bannedUsers[currentUsername!] : null
+                  }
                   value={isAdmin ? banInput : undefined}
                   onChange={isAdmin ? setBanInput : undefined}
                 />

@@ -33,9 +33,11 @@ export function UsernameForm({
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedUsername = localStorage.getItem("chat-username");
-    if (savedUsername) {
-      setUsername(savedUsername);
+    if (typeof window !== "undefined") {
+      const savedUsername = localStorage.getItem("chat-username");
+      if (savedUsername) {
+        setUsername(savedUsername);
+      }
     }
   }, []);
 
@@ -57,10 +59,14 @@ export function UsernameForm({
         setLocalError("Incorrect password for admin user.");
         return;
       }
-      localStorage.setItem("chat-username", username.trim());
+      if (typeof window !== "undefined") {
+        localStorage.setItem("chat-username", username.trim());
+      }
       onSubmit(username.trim(), true);
     } else {
-      localStorage.setItem("chat-username", username.trim());
+      if (typeof window !== "undefined") {
+        localStorage.setItem("chat-username", username.trim());
+      }
       onSubmit(username.trim(), false);
     }
   };

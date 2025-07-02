@@ -35,25 +35,23 @@ export default function ChatPage() {
 
   const handleJoin = (username: string, isAdminFlag: boolean) => {
     setIsAdmin(isAdminFlag);
-    const socket = socketManager.connect(username);
     setJoining(true);
     setJoinError(null);
-    setConnected(true); // Optimistically set connected to true
+    // Only connect when user clicks join/rejoin
+    const socket = socketManager.connect(username);
 
     socket.on("connect", () => {
-      console.log("Connected to server");
       setConnected(true);
       socket.emit("join", username);
     });
     socket.on("disconnect", () => {
-      console.log("Disconnected from server");
       setConnected(false);
       setJoined(false);
+      reset();
     });
     socket.on(
       "join-success",
       (data: { username: string; users: User[]; messages: Message[] }) => {
-        console.log("Join successful:", data);
         setJoining(false);
         setJoinError(null);
         setJoined(true);
@@ -68,10 +66,9 @@ export default function ChatPage() {
       },
     );
     socket.on("join-error", (error: string) => {
-      console.log("Join error:", error);
       setJoining(false);
       setJoinError(error);
-      setConnected(false); // Set connected to false on join error
+      setConnected(false);
       socket.off("connect");
       socket.off("disconnect");
       socket.off("join-success");
@@ -105,6 +102,17 @@ export default function ChatPage() {
         timestamp: new Date(data.message.timestamp),
       });
     });
+  };
+
+  // Manual reconnect handler
+  const handleReconnect = () => {
+    let savedUsername = null;
+    if (typeof window !== "undefined") {
+      savedUsername = localStorage.getItem("chat-username");
+    }
+    if (savedUsername) {
+      handleJoin(savedUsername, isAdmin);
+    }
   };
 
   useEffect(() => {
@@ -158,6 +166,24 @@ export default function ChatPage() {
   };
 
   if (!isJoined) {
+    // If not joined, show join form or reconnect button if previously joined
+    let hasSavedUsername = false;
+    if (typeof window !== "undefined") {
+      hasSavedUsername = !!localStorage.getItem("chat-username");
+    }
+    if (!isConnected && hasSavedUsername) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <p className="mb-4 text-lg text-red-600">Disconnected from chat.</p>
+          <button
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+            onClick={handleReconnect}
+          >
+            Rejoin Chat
+          </button>
+        </div>
+      );
+    }
     return (
       <UsernameForm
         onSubmit={handleJoin}

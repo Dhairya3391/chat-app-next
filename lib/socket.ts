@@ -20,9 +20,6 @@ class SocketManager {
       path: "/api/socket",
       addTrailingSlash: false,
       query: { username },
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
     });
 
     return this.socket;
@@ -37,6 +34,10 @@ class SocketManager {
 
   getSocket(): Socket | null {
     return this.socket;
+  }
+
+  isConnected(): boolean {
+    return !!(this.socket && this.socket.connected);
   }
 }
 
