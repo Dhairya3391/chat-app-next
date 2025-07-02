@@ -20,12 +20,14 @@ interface UsernameFormProps {
   onSubmit: (username: string, isAdmin: boolean) => void;
   isLoading: boolean;
   error: string | null;
+  buttonLabel?: string;
 }
 
 export function UsernameForm({
   onSubmit,
   isLoading,
   error,
+  buttonLabel = "Join Chat",
 }: UsernameFormProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -150,10 +152,10 @@ export function UsernameForm({
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Joining...
+                    {buttonLabel === "Join Chat" ? "Joining..." : "Rejoining..."}
                   </>
                 ) : (
-                  "Join Chat"
+                  buttonLabel
                 )}
               </Button>
             </form>

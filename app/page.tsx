@@ -104,17 +104,6 @@ export default function ChatPage() {
     });
   };
 
-  // Manual reconnect handler
-  const handleReconnect = () => {
-    let savedUsername = null;
-    if (typeof window !== "undefined") {
-      savedUsername = localStorage.getItem("chat-username");
-    }
-    if (savedUsername) {
-      handleJoin(savedUsername, isAdmin);
-    }
-  };
-
   useEffect(() => {
     const socket = socketManager.getSocket();
     if (socket) {
@@ -173,15 +162,12 @@ export default function ChatPage() {
     }
     if (!isConnected && hasSavedUsername) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <p className="mb-4 text-lg text-red-600">Disconnected from chat.</p>
-          <button
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
-            onClick={handleReconnect}
-          >
-            Rejoin Chat
-          </button>
-        </div>
+        <UsernameForm
+          onSubmit={handleJoin}
+          isLoading={isJoining}
+          error={joinError}
+          buttonLabel="Rejoin Chat"
+        />
       );
     }
     return (

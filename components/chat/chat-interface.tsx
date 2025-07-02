@@ -8,10 +8,11 @@ import { ChatMessage } from "./message";
 import { UsersList } from "./users-list";
 import { MessageInput } from "./message-input";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageCircle, Wifi, WifiOff, Pin } from "lucide-react";
+import { MessageCircle, Wifi, WifiOff, Pin, LogOut } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import bannedWords from "../../bannedWords.json" assert { type: "json" };
 import { socketManager } from "@/lib/socket";
+import { Button } from "@/components/ui/button";
 
 interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
@@ -400,27 +401,43 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
                     Global Chat
                   </span>
                 </div>
-                <button
-                  className="block lg:hidden px-2 py-1 rounded text-taupe_gray-400 hover:bg-platinum-100"
-                  onClick={toggleSidebar}
-                  aria-label={
-                    isSidebarOpen ? "Hide online users" : "Show online users"
-                  }
-                >
-                  {isSidebarOpen ? "Hide Users" : "Show Users"}
-                </button>
-                <div className="hidden lg:flex items-center gap-2 text-sm">
-                  {isConnected ? (
-                    <>
-                      <Wifi className="w-4 h-4 text-green-500" />
-                      <span className="text-green-600">Connected</span>
-                    </>
-                  ) : (
-                    <>
-                      <WifiOff className="w-4 h-4 text-red-500" />
-                      <span className="text-red-600">Disconnected</span>
-                    </>
-                  )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        localStorage.clear();
+                      }
+                      window.location.reload();
+                    }}
+                    title="Leave Chat"
+                  >
+                    <LogOut className="w-4 h-4 mr-1" /> Leave
+                  </Button>
+                  <button
+                    className="block lg:hidden px-2 py-1 rounded text-taupe_gray-400 hover:bg-platinum-100"
+                    onClick={toggleSidebar}
+                    aria-label={
+                      isSidebarOpen ? "Hide online users" : "Show online users"
+                    }
+                  >
+                    {isSidebarOpen ? "Hide Users" : "Show Users"}
+                  </button>
+                  <div className="hidden lg:flex items-center gap-2 text-sm">
+                    {isConnected ? (
+                      <>
+                        <Wifi className="w-4 h-4 text-green-500" />
+                        <span className="text-green-600">Connected</span>
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="w-4 h-4 text-red-500" />
+                        <span className="text-red-600">Disconnected</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardTitle>
             </CardHeader>
