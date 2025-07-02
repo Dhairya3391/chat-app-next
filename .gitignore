@@ -42,3 +42,4 @@ out/
 
 # Optional: Ignore next-env.d.ts if auto-generated
 next-env.d.ts 
+.vercel

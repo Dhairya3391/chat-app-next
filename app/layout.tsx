@@ -3,9 +3,9 @@ import './globals.css'
 import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'Global Chat',
+  description: 'Chat with people around the world',
+  generator: 'Global Chat',
 }
 
 export default function RootLayout({
