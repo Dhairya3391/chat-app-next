@@ -13,6 +13,8 @@ import { useToast } from "@/components/ui/use-toast";
 import bannedWords from "../../bannedWords.json" assert { type: "json" };
 import { socketManager } from "@/lib/socket";
 import { Button } from "@/components/ui/button";
+import { ShareFileDialog } from './share-file-dialog';
+import { FileTransferRequest } from './file-transfer-request';
 
 interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
@@ -31,6 +33,14 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
     {},
   );
   const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null);
+  const [showShareFile, setShowShareFile] = useState(false);
+  // File transfer request state
+  const [incomingFileRequest, setIncomingFileRequest] = useState<{
+    fileName: string;
+    size: number;
+    sender: string;
+  } | null>(null);
+  const [showFileRequestDialog, setShowFileRequestDialog] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -358,6 +368,24 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
       );
   }, [banInput, users, isAdmin, currentUsername]);
 
+  useEffect(() => {
+    const socket = socketManager.getSocket();
+    if (!socket) return;
+    const handleFileRequest = (data: { fileName: string; size: number; sender: string }) => {
+      setIncomingFileRequest(data);
+      setShowFileRequestDialog(true);
+    };
+    socket.on('file-transfer-approval-request', handleFileRequest);
+    return () => {
+      socket.off('file-transfer-approval-request', handleFileRequest);
+    };
+  }, []);
+
+  const handleFileRequestDialogClose = () => {
+    setShowFileRequestDialog(false);
+    setIncomingFileRequest(null);
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-anti_flash_white-500 dark:bg-black-100 p-0 md:p-4 transition-colors duration-300">
       <div
@@ -518,16 +546,29 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
                     </button>
                   </div>
                 )}
-                <MessageInput
-                  ref={inputRef}
-                  onSendMessage={handleSendMessage}
-                  disabled={!isConnected || isCurrentUserBanned}
-                  bannedUntil={
-                    isCurrentUserBanned ? bannedUsers[currentUsername!] : null
-                  }
-                  value={isAdmin ? banInput : undefined}
-                  onChange={isAdmin ? setBanInput : undefined}
-                />
+                <div className="flex items-center gap-2 p-3 border-t border-taupe_gray-200 bg-anti_flash_white-500 dark:bg-black-100">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowShareFile(true)}
+                    className="mr-2"
+                    size="icon"
+                    title="Share File"
+                  >
+                    <span role="img" aria-label="Share File">📎</span>
+                  </Button>
+                  <div className="flex-1">
+                    <MessageInput
+                      ref={inputRef}
+                      onSendMessage={handleSendMessage}
+                      disabled={!isConnected || isCurrentUserBanned}
+                      bannedUntil={
+                        isCurrentUserBanned ? bannedUsers[currentUsername!] : null
+                      }
+                      value={isAdmin ? banInput : undefined}
+                      onChange={isAdmin ? setBanInput : undefined}
+                    />
+                  </div>
+                </div>
                 {/* Admin autocomplete dropdown for /ban */}
                 {isAdmin && showBanAutocomplete && banCandidates.length > 0 && (
                   <div className="absolute left-0 right-0 bg-white border rounded shadow z-50 mt-1 max-h-40 overflow-y-auto">
@@ -570,6 +611,12 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
           </div>
         </motion.div>
       </div>
+      <FileTransferRequest
+        open={showFileRequestDialog}
+        onOpenChange={handleFileRequestDialogClose}
+        request={incomingFileRequest}
+      />
+      <ShareFileDialog open={showShareFile} onOpenChange={setShowShareFile} />
     </div>
   );
 }

@@ -93,6 +93,9 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
     }
     // --- End graceful shutdown logic ---
 
+    // --- File Transfer Logic ---
+    const approvedUsers = new Set<string>();
+
     io.on("connection", (socket: ServerSocket) => {
       const ip = getIp(socket);
       let bannedIps: Record<string, number> = loadBannedIps();
@@ -109,126 +112,217 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
       }
       console.log("User connected:", socket.id);
 
+      socket.on("disconnect", (reason) => {
+        console.log(`Socket ${socket.id} disconnected:`, reason);
+      });
+
       // --- Admin Commands ---
       // Pin a message (by ID)
       socket.on("admin-pin-message", (msgId) => {
-        const msg = messages.find((m) => m.id === msgId);
-        if (msg) {
-          pinnedMessage = msg;
-          if (io) io.emit("pin-message", msg);
+        try {
+          const msg = messages.find((m) => m.id === msgId);
+          if (msg) {
+            pinnedMessage = msg;
+            if (io) io.emit("pin-message", msg);
+          }
+        } catch (err) {
+          console.error("Error in admin-pin-message handler:", err);
         }
       });
 
       // Unpin the current pinned message
       socket.on("admin-unpin-message", () => {
-        pinnedMessage = null;
-        if (io) io.emit("unpin-message");
+        try {
+          pinnedMessage = null;
+          if (io) io.emit("unpin-message");
+        } catch (err) {
+          console.error("Error in admin-unpin-message handler:", err);
+        }
       });
 
       // Clear all messages for everyone
       socket.on("admin-clear-messages", () => {
-        messages.length = 0;
-        const sysMsg = {
-          id: `system-${Date.now()}-${Math.random()}`,
-          username: "System",
-          content: `Chat was cleared by admin`,
-          timestamp: new Date(),
-          type: "system" as const,
-        };
-        messages.push(sysMsg);
-        if (io) io.emit("clear-messages", sysMsg);
-      });
-
-      // Ban a user for everyone
-      socket.on("admin-ban-user", ({ username, duration }) => {
-        // Find user by username
-        const user = Array.from(connectedUsers.values()).find(
-          (u) => u.username === username,
-        );
-        if (user && io) {
-          // Ban their IP
-          const targetSocket = io.sockets.sockets.get(user.id);
-          if (targetSocket) {
-            const targetIp = getIp(targetSocket);
-            bannedIps = loadBannedIps();
-            bannedIps[targetIp] = Date.now() + duration;
-            saveBannedIps(bannedIps);
-          }
-        }
-        // Broadcast ban event to all clients
-        if (io) io.emit("ban-user", { username, until: Date.now() + duration });
-        // System message
-        const sysMsg = {
-          id: `system-${Date.now()}-${Math.random()}`,
-          username: "System",
-          content: `@${username} was banned by admin for ${Math.round(duration / 60000)} min`,
-          timestamp: new Date(),
-          type: "system" as const,
-        };
-        messages.push(sysMsg);
-        if (io) io.emit("new-message", sysMsg);
-      });
-
-      // Unban a user for everyone
-      socket.on("admin-unban-user", (username) => {
-        // Find user by username
-        const user = Array.from(connectedUsers.values()).find(
-          (u) => u.username === username,
-        );
-        if (user && io) {
-          // Unban their IP
-          const targetSocket = io.sockets.sockets.get(user.id);
-          if (targetSocket) {
-            const targetIp = getIp(targetSocket);
-            bannedIps = loadBannedIps();
-            delete bannedIps[targetIp];
-            saveBannedIps(bannedIps);
-          }
-        }
-        if (io) io.emit("unban-user", username);
-        const sysMsg = {
-          id: `system-${Date.now()}-${Math.random()}`,
-          username: "System",
-          content: `@${username} was unbanned by admin`,
-          timestamp: new Date(),
-          type: "system" as const,
-        };
-        messages.push(sysMsg);
-        if (io) io.emit("new-message", sysMsg);
-      });
-
-      // Kick a user (force disconnect)
-      socket.on("admin-kick-user", (username) => {
-        const user = Array.from(connectedUsers.values()).find(
-          (u) => u.username === username,
-        );
-        if (user && io) {
-          io.to(user.id).emit("kicked");
-          connectedUsers.delete(user.id);
+        try {
+          messages.length = 0;
           const sysMsg = {
             id: `system-${Date.now()}-${Math.random()}`,
             username: "System",
-            content: `@${username} was kicked by admin`,
+            content: `Chat was cleared by admin`,
             timestamp: new Date(),
             type: "system" as const,
           };
           messages.push(sysMsg);
-          io.emit("new-message", sysMsg);
-          io.emit("user-left", { userId: user.id, message: sysMsg });
+          if (io) io.emit("clear-messages", sysMsg);
+        } catch (err) {
+          console.error("Error in admin-clear-messages handler:", err);
+        }
+      });
+
+      // Ban a user for everyone
+      socket.on("admin-ban-user", ({ username, duration }) => {
+        try {
+          // Find user by username
+          const user = Array.from(connectedUsers.values()).find(
+            (u) => u.username === username,
+          );
+          if (user && io) {
+            // Ban their IP
+            const targetSocket = io.sockets.sockets.get(user.id);
+            if (targetSocket) {
+              const targetIp = getIp(targetSocket);
+              bannedIps = loadBannedIps();
+              bannedIps[targetIp] = Date.now() + duration;
+              saveBannedIps(bannedIps);
+            }
+          }
+          // Broadcast ban event to all clients
+          if (io) io.emit("ban-user", { username, until: Date.now() + duration });
+          // System message
+          const sysMsg = {
+            id: `system-${Date.now()}-${Math.random()}`,
+            username: "System",
+            content: `@${username} was banned by admin for ${Math.round(duration / 60000)} min`,
+            timestamp: new Date(),
+            type: "system" as const,
+          };
+          messages.push(sysMsg);
+          if (io) io.emit("new-message", sysMsg);
+        } catch (err) {
+          console.error("Error in admin-ban-user handler:", err);
+        }
+      });
+
+      // Unban a user for everyone
+      socket.on("admin-unban-user", (username) => {
+        try {
+          // Find user by username
+          const user = Array.from(connectedUsers.values()).find(
+            (u) => u.username === username,
+          );
+          if (user && io) {
+            // Unban their IP
+            const targetSocket = io.sockets.sockets.get(user.id);
+            if (targetSocket) {
+              const targetIp = getIp(targetSocket);
+              bannedIps = loadBannedIps();
+              delete bannedIps[targetIp];
+              saveBannedIps(bannedIps);
+            }
+          }
+          if (io) io.emit("unban-user", username);
+          const sysMsg = {
+            id: `system-${Date.now()}-${Math.random()}`,
+            username: "System",
+            content: `@${username} was unbanned by admin`,
+            timestamp: new Date(),
+            type: "system" as const,
+          };
+          messages.push(sysMsg);
+          if (io) io.emit("new-message", sysMsg);
+        } catch (err) {
+          console.error("Error in admin-unban-user handler:", err);
+        }
+      });
+
+      // Kick a user (force disconnect)
+      socket.on("admin-kick-user", (username) => {
+        try {
+          const user = Array.from(connectedUsers.values()).find(
+            (u) => u.username === username,
+          );
+          if (user && io) {
+            io.to(user.id).emit("kicked");
+            connectedUsers.delete(user.id);
+            const sysMsg = {
+              id: `system-${Date.now()}-${Math.random()}`,
+              username: "System",
+              content: `@${username} was kicked by admin`,
+              timestamp: new Date(),
+              type: "system" as const,
+            };
+            messages.push(sysMsg);
+            io.emit("new-message", sysMsg);
+            io.emit("user-left", { userId: user.id, message: sysMsg });
+          }
+        } catch (err) {
+          console.error("Error in admin-kick-user handler:", err);
         }
       });
 
       // Announce a message to all users
       socket.on("admin-announce", (content) => {
-        const sysMsg = {
-          id: `system-${Date.now()}-${Math.random()}`,
-          username: "System",
-          content: `[Announcement] ${content}`,
-          timestamp: new Date(),
-          type: "system" as const,
-        };
-        messages.push(sysMsg);
-        if (io) io.emit("new-message", sysMsg);
+        try {
+          const sysMsg = {
+            id: `system-${Date.now()}-${Math.random()}`,
+            username: "System",
+            content: `[Announcement] ${content}`,
+            timestamp: new Date(),
+            type: "system" as const,
+          };
+          messages.push(sysMsg);
+          if (io) io.emit("new-message", sysMsg);
+        } catch (err) {
+          console.error("Error in admin-announce handler:", err);
+        }
+      });
+
+      // Admin approve user for large files
+      socket.on("admin-approve-user", (username: string) => {
+        try {
+          if (connectedUsers.get(socket.id)?.username === "noobokay") {
+            approvedUsers.add(username);
+            if (io) io.emit("user-approved", username);
+          }
+        } catch (err) {
+          console.error("Error in admin-approve-user handler:", err);
+        }
+      });
+
+      // File transfer request
+      socket.on("file-transfer-request", (data) => {
+        try {
+          // data: { fileName, size, sender, recipients }
+          const { fileName, size, sender, recipients } = data;
+          // Enforce file size limit unless approved
+          const isApproved = approvedUsers.has(sender);
+          if (!isApproved && size > 100 * 1024 * 1024) {
+            socket.emit("file-transfer-status", { status: "rejected", reason: "File too large. Ask admin to approve you." });
+            return;
+          }
+          // Send approval request to recipients
+          (recipients.includes("ALL")
+            ? Array.from(connectedUsers.values()).filter((u) => u.username !== sender)
+            : Array.from(connectedUsers.values()).filter((u) => recipients.includes(u.username))
+          ).forEach((user) => {
+            io?.to(user.id).emit("file-transfer-approval-request", {
+              fileName,
+              size,
+              sender,
+            });
+          });
+          socket.emit("file-transfer-status", { status: "pending" });
+        } catch (err) {
+          console.error("Error in file-transfer-request handler:", err);
+          socket.emit("file-transfer-status", { status: "rejected", reason: "Internal server error." });
+        }
+      });
+
+      // File transfer approval response
+      socket.on("file-transfer-approval-response", (data) => {
+        try {
+          // data: { sender, recipient, fileName, accepted }
+          const { sender, recipient, fileName, accepted } = data;
+          const senderUser = Array.from(connectedUsers.values()).find((u) => u.username === sender);
+          if (senderUser) {
+            io?.to(senderUser.id).emit("file-transfer-status", {
+              status: accepted ? "approved" : "rejected",
+              recipient,
+              fileName,
+            });
+          }
+        } catch (err) {
+          console.error("Error in file-transfer-approval-response handler:", err);
+        }
       });
 
       // Handle username validation and user join
@@ -260,6 +354,13 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
           );
 
           if (existingUser) {
+            if (io) {
+              const oldSocket = io.sockets.sockets.get(existingUser.id);
+              if (oldSocket) {
+                oldSocket.emit('kicked', { reason: 'Another session joined with your username.' });
+                oldSocket.disconnect(true);
+              }
+            }
             connectedUsers.delete(existingUser.id);
           }
 
