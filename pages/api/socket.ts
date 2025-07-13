@@ -29,6 +29,7 @@ let pinnedMessage: null | {
 } = null;
 
 let io: ServerIO | undefined;
+let httpServerRef: NetServer | undefined; // Track the HTTP server for shutdown
 
 // Persistent IP ban storage
 const bannedIpsPath = path.resolve(process.cwd(), "bannedIps.json");
@@ -59,6 +60,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
     const httpServer: NetServer = (
       res.socket as unknown as { server: NetServer }
     ).server;
+    httpServerRef = httpServer;
     io = new ServerIO(httpServer, {
       path: "/api/socket",
       addTrailingSlash: false,
@@ -67,6 +69,29 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
         methods: ["GET", "POST"],
       },
     });
+
+    // --- Graceful shutdown logic ---
+    const shutdown = async () => {
+      if (io) {
+        console.log("\n[Graceful Shutdown] Closing Socket.IO server...");
+        await new Promise((resolve) => io!.close(resolve));
+        io = undefined;
+      }
+      if (httpServerRef) {
+        console.log("[Graceful Shutdown] Closing HTTP server...");
+        httpServerRef.close?.(() => {
+          console.log("[Graceful Shutdown] HTTP server closed.");
+        });
+        httpServerRef = undefined;
+      }
+      process.exit(0);
+    };
+    if (!process.env.__SOCKET_SHUTDOWN_ATTACHED) {
+      process.env.__SOCKET_SHUTDOWN_ATTACHED = "1";
+      process.on("SIGINT", shutdown);
+      process.on("SIGTERM", shutdown);
+    }
+    // --- End graceful shutdown logic ---
 
     io.on("connection", (socket: ServerSocket) => {
       const ip = getIp(socket);
