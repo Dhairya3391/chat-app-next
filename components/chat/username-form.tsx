@@ -152,7 +152,9 @@ export function UsernameForm({
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {buttonLabel === "Join Chat" ? "Joining..." : "Rejoining..."}
+                    {buttonLabel === "Join Chat"
+                      ? "Joining..."
+                      : "Rejoining..."}
                   </>
                 ) : (
                   buttonLabel

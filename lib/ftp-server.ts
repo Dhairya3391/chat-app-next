@@ -1,6 +1,6 @@
-import { FtpSrv, FileSystem } from 'ftp-srv';
-import path from 'path';
-import fs from 'fs';
+import { FtpSrv, FileSystem } from "ftp-srv";
+import path from "path";
+import fs from "fs";
 
 export interface FtpUser {
   username: string;
@@ -11,8 +11,8 @@ export interface FtpUser {
 let ftpServer: FtpSrv | null = null;
 const users: Record<string, FtpUser> = {};
 const FTP_PORT = 2121;
-const FTP_HOST = '127.0.0.1';
-const FTP_ROOT = path.resolve(process.cwd(), 'public/ftp');
+const FTP_HOST = "127.0.0.1";
+const FTP_ROOT = path.resolve(process.cwd(), "public/ftp");
 
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) {
@@ -27,19 +27,27 @@ export async function startFtpServer() {
     url: `ftp://${FTP_HOST}:${FTP_PORT}`,
     anonymous: false,
     pasv_url: FTP_HOST,
-    greeting: ['Welcome to the chat FTP server!']
+    greeting: ["Welcome to the chat FTP server!"],
   });
 
-  ftpServer.on('login', ({ username, password }, resolve, reject) => {
+  ftpServer.on("login", ({ username, password }, resolve, reject) => {
     const user = users[username];
     if (!user || user.password !== password) {
-      return reject(new Error('Invalid credentials'));
+      return reject(new Error("Invalid credentials"));
     }
     ensureDir(user.root);
     resolve({ root: user.root } as FileSystem);
   });
 
-  await ftpServer.listen();
+  try {
+    await ftpServer.listen();
+  } catch (error: unknown) {
+    if (error instanceof Error && 'code' in error && (error as { code: string }).code === 'EADDRINUSE') {
+      console.log(`FTP server already running on port ${FTP_PORT}`);
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function stopFtpServer() {
@@ -72,7 +80,7 @@ export function getFtpInfo(username: string) {
     port: FTP_PORT,
     username: user.username,
     password: user.password,
-    root: user.root.replace(process.cwd(), ''),
+    root: user.root.replace(process.cwd(), ""),
     url: `ftp://${FTP_HOST}:${FTP_PORT}`,
   };
-} 
+}

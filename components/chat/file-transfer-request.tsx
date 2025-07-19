@@ -1,9 +1,15 @@
-import * as React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useChatStore } from '@/stores/chat-store';
-import { socketManager } from '@/lib/socket';
+import * as React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useChatStore } from "@/stores/chat-store";
+import { socketManager } from "@/lib/socket";
 
 interface FileTransferRequestProps {
   open: boolean;
@@ -24,7 +30,11 @@ interface FtpInfo {
   url: string;
 }
 
-export function FileTransferRequest({ open, onOpenChange, request }: FileTransferRequestProps) {
+export function FileTransferRequest({
+  open,
+  onOpenChange,
+  request,
+}: FileTransferRequestProps) {
   const [accepted, setAccepted] = React.useState(false);
   const [rejected, setRejected] = React.useState(false);
   const [ftpInfo, setFtpInfo] = React.useState<FtpInfo | null>(null);
@@ -40,7 +50,7 @@ export function FileTransferRequest({ open, onOpenChange, request }: FileTransfe
     // Notify sender via Socket.IO
     const socket = socketManager.getSocket();
     if (socket && request) {
-      socket.emit('file-transfer-approval-response', {
+      socket.emit("file-transfer-approval-response", {
         sender: request.sender,
         recipient: currentUsername,
         fileName: request.fileName,
@@ -49,11 +59,13 @@ export function FileTransferRequest({ open, onOpenChange, request }: FileTransfe
     }
     // Fetch FTP info
     try {
-      const res = await fetch(`/api/ftp?username=${encodeURIComponent(currentUsername || '')}`);
+      const res = await fetch(
+        `/api/ftp?username=${encodeURIComponent(currentUsername || "")}`,
+      );
       const info: FtpInfo = await res.json();
       setFtpInfo(info);
     } catch {
-      setError('Failed to get FTP info');
+      setError("Failed to get FTP info");
     }
   };
 
@@ -64,7 +76,7 @@ export function FileTransferRequest({ open, onOpenChange, request }: FileTransfe
     // Notify sender via Socket.IO
     const socket = socketManager.getSocket();
     if (socket && request) {
-      socket.emit('file-transfer-approval-response', {
+      socket.emit("file-transfer-approval-response", {
         sender: request.sender,
         recipient: currentUsername,
         fileName: request.fileName,
@@ -78,11 +90,14 @@ export function FileTransferRequest({ open, onOpenChange, request }: FileTransfe
     setProgress(0);
     setError(null);
     try {
-      const res = await fetch(`/api/file/download?sender=${encodeURIComponent(request?.sender || '')}&recipient=${encodeURIComponent(currentUsername || '')}&file=${encodeURIComponent(request?.fileName || '')}`, {
-        method: 'GET',
-      });
-      if (!res.ok) throw new Error('Download failed or file not found');
-      const contentLength = res.headers.get('content-length');
+      const res = await fetch(
+        `/api/file/download?sender=${encodeURIComponent(request?.sender || "")}&recipient=${encodeURIComponent(currentUsername || "")}&file=${encodeURIComponent(request?.fileName || "")}`,
+        {
+          method: "GET",
+        },
+      );
+      if (!res.ok) throw new Error("Download failed or file not found");
+      const contentLength = res.headers.get("content-length");
       const total = contentLength ? parseInt(contentLength, 10) : undefined;
       const reader = res.body?.getReader();
       let received = 0;
@@ -99,9 +114,9 @@ export function FileTransferRequest({ open, onOpenChange, request }: FileTransfe
         }
         const blob = new Blob(chunks);
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = request?.fileName || 'file';
+        a.download = request?.fileName || "file";
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -112,9 +127,9 @@ export function FileTransferRequest({ open, onOpenChange, request }: FileTransfe
         // fallback for browsers without stream support
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = request?.fileName || 'file';
+        a.download = request?.fileName || "file";
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -124,7 +139,7 @@ export function FileTransferRequest({ open, onOpenChange, request }: FileTransfe
       }
     } catch {
       setDownloading(false);
-      setError('Download failed or file not found');
+      setError("Download failed or file not found");
     }
   };
 
@@ -136,29 +151,48 @@ export function FileTransferRequest({ open, onOpenChange, request }: FileTransfe
         </DialogHeader>
         {request && (
           <div className="space-y-2">
-            <div><b>From:</b> {request.sender}</div>
-            <div><b>File:</b> {request.fileName}</div>
-            <div><b>Size:</b> {(request.size / 1024 / 1024).toFixed(2)} MB</div>
+            <div>
+              <b>From:</b> {request.sender}
+            </div>
+            <div>
+              <b>File:</b> {request.fileName}
+            </div>
+            <div>
+              <b>Size:</b> {(request.size / 1024 / 1024).toFixed(2)} MB
+            </div>
           </div>
         )}
         {accepted && !rejected && (
-          <div className="text-green-600 text-sm mb-2">File transfer accepted. You can now download the file.</div>
+          <div className="text-green-600 text-sm mb-2">
+            File transfer accepted. You can now download the file.
+          </div>
         )}
         {rejected && (
-          <div className="text-red-600 text-sm mb-2">File transfer rejected.</div>
+          <div className="text-red-600 text-sm mb-2">
+            File transfer rejected.
+          </div>
         )}
         {accepted && ftpInfo && (
           <div className="bg-muted p-2 rounded text-xs">
-            <div><b>FTP Info:</b></div>
+            <div>
+              <b>FTP Info:</b>
+            </div>
             <div>Host: {ftpInfo.host}</div>
             <div>Port: {ftpInfo.port}</div>
             <div>Username: {ftpInfo.username}</div>
             <div>Password: {ftpInfo.password}</div>
-            <div>Path: {ftpInfo.root}/{request?.sender}/{currentUsername}/{request?.fileName}</div>
+            <div>
+              Path: {ftpInfo.root}/{request?.sender}/{currentUsername}/
+              {request?.fileName}
+            </div>
           </div>
         )}
         {accepted && !rejected && (
-          <Button onClick={handleDownload} disabled={downloading} className="mt-2">
+          <Button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="mt-2"
+          >
             Download
           </Button>
         )}
@@ -167,10 +201,12 @@ export function FileTransferRequest({ open, onOpenChange, request }: FileTransfe
         {!accepted && !rejected && (
           <DialogFooter>
             <Button onClick={handleAccept}>Accept</Button>
-            <Button variant="outline" onClick={handleReject}>Reject</Button>
+            <Button variant="outline" onClick={handleReject}>
+              Reject
+            </Button>
           </DialogFooter>
         )}
       </DialogContent>
     </Dialog>
   );
-} 
+}

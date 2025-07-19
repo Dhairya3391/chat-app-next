@@ -13,8 +13,8 @@ import { useToast } from "@/components/ui/use-toast";
 import bannedWords from "../../bannedWords.json" assert { type: "json" };
 import { socketManager } from "@/lib/socket";
 import { Button } from "@/components/ui/button";
-import { ShareFileDialog } from './share-file-dialog';
-import { FileTransferRequest } from './file-transfer-request';
+import { ShareFileDialog } from "./share-file-dialog";
+import { FileTransferRequest } from "./file-transfer-request";
 
 interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
@@ -231,6 +231,17 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
         if (socket) socket.emit("admin-announce", content);
         return;
       }
+      if (message.trim().startsWith("/approve ")) {
+        const match = message.trim().match(/^\/approve\s+@?(\w+)/);
+        if (match) {
+          const usernameToApprove = match[1];
+          const socket = socketManager.getSocket();
+          if (socket) {
+            socket.emit("admin-approve-user", usernameToApprove);
+          }
+          return;
+        }
+      }
     }
     // Ban logic for normal users
     if (!isAdmin) {
@@ -371,13 +382,17 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
   useEffect(() => {
     const socket = socketManager.getSocket();
     if (!socket) return;
-    const handleFileRequest = (data: { fileName: string; size: number; sender: string }) => {
+    const handleFileRequest = (data: {
+      fileName: string;
+      size: number;
+      sender: string;
+    }) => {
       setIncomingFileRequest(data);
       setShowFileRequestDialog(true);
     };
-    socket.on('file-transfer-approval-request', handleFileRequest);
+    socket.on("file-transfer-approval-request", handleFileRequest);
     return () => {
-      socket.off('file-transfer-approval-request', handleFileRequest);
+      socket.off("file-transfer-approval-request", handleFileRequest);
     };
   }, []);
 
@@ -554,7 +569,9 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
                     size="icon"
                     title="Share File"
                   >
-                    <span role="img" aria-label="Share File">📎</span>
+                    <span role="img" aria-label="Share File">
+                      📎
+                    </span>
                   </Button>
                   <div className="flex-1">
                     <MessageInput
@@ -562,7 +579,9 @@ export function ChatInterface({ onSendMessage, isAdmin }: ChatInterfaceProps) {
                       onSendMessage={handleSendMessage}
                       disabled={!isConnected || isCurrentUserBanned}
                       bannedUntil={
-                        isCurrentUserBanned ? bannedUsers[currentUsername!] : null
+                        isCurrentUserBanned
+                          ? bannedUsers[currentUsername!]
+                          : null
                       }
                       value={isAdmin ? banInput : undefined}
                       onChange={isAdmin ? setBanInput : undefined}

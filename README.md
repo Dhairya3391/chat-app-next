@@ -24,6 +24,7 @@ A modern real-time chat application built with Next.js, Socket.IO, and React. Fe
   - `/kick <username>`: Force disconnect a user
   - `/clear`: Clear all chat messages
   - `/announce <message>`: Broadcast a system announcement
+  - `/approve <username>`: Approve a user to send large files (over 100MB)
   - `/users`: List all current users
 - **Pin/unpin messages**: Pin any message for all users
 

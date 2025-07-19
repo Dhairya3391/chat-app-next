@@ -176,7 +176,8 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
             }
           }
           // Broadcast ban event to all clients
-          if (io) io.emit("ban-user", { username, until: Date.now() + duration });
+          if (io)
+            io.emit("ban-user", { username, until: Date.now() + duration });
           // System message
           const sysMsg = {
             id: `system-${Date.now()}-${Math.random()}`,
@@ -269,9 +270,39 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
       // Admin approve user for large files
       socket.on("admin-approve-user", (username: string) => {
         try {
-          if (connectedUsers.get(socket.id)?.username === "noobokay") {
+          const adminUser = connectedUsers.get(socket.id);
+          console.log(
+            "Admin approve request from:",
+            adminUser?.username,
+            "for user:",
+            username,
+          );
+          if (adminUser?.username === "noobokay") {
             approvedUsers.add(username);
-            if (io) io.emit("user-approved", username);
+            console.log(
+              "User approved:",
+              username,
+              "Approved users:",
+              Array.from(approvedUsers),
+            );
+            if (io) {
+              io.emit("user-approved", username);
+              // Send system message
+              const sysMsg = {
+                id: `system-${Date.now()}-${Math.random()}`,
+                username: "System",
+                content: `@${username} was approved for large file transfers by admin`,
+                timestamp: new Date(),
+                type: "system" as const,
+              };
+              messages.push(sysMsg);
+              io.emit("new-message", sysMsg);
+            }
+          } else {
+            console.log(
+              "Non-admin user tried to approve:",
+              adminUser?.username,
+            );
           }
         } catch (err) {
           console.error("Error in admin-approve-user handler:", err);
@@ -286,13 +317,20 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
           // Enforce file size limit unless approved
           const isApproved = approvedUsers.has(sender);
           if (!isApproved && size > 100 * 1024 * 1024) {
-            socket.emit("file-transfer-status", { status: "rejected", reason: "File too large. Ask admin to approve you." });
+            socket.emit("file-transfer-status", {
+              status: "rejected",
+              reason: "File too large. Ask admin to approve you.",
+            });
             return;
           }
           // Send approval request to recipients
           (recipients.includes("ALL")
-            ? Array.from(connectedUsers.values()).filter((u) => u.username !== sender)
-            : Array.from(connectedUsers.values()).filter((u) => recipients.includes(u.username))
+            ? Array.from(connectedUsers.values()).filter(
+                (u) => u.username !== sender,
+              )
+            : Array.from(connectedUsers.values()).filter((u) =>
+                recipients.includes(u.username),
+              )
           ).forEach((user) => {
             io?.to(user.id).emit("file-transfer-approval-request", {
               fileName,
@@ -303,7 +341,10 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
           socket.emit("file-transfer-status", { status: "pending" });
         } catch (err) {
           console.error("Error in file-transfer-request handler:", err);
-          socket.emit("file-transfer-status", { status: "rejected", reason: "Internal server error." });
+          socket.emit("file-transfer-status", {
+            status: "rejected",
+            reason: "Internal server error.",
+          });
         }
       });
 
@@ -312,7 +353,9 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
         try {
           // data: { sender, recipient, fileName, accepted }
           const { sender, recipient, fileName, accepted } = data;
-          const senderUser = Array.from(connectedUsers.values()).find((u) => u.username === sender);
+          const senderUser = Array.from(connectedUsers.values()).find(
+            (u) => u.username === sender,
+          );
           if (senderUser) {
             io?.to(senderUser.id).emit("file-transfer-status", {
               status: accepted ? "approved" : "rejected",
@@ -321,7 +364,10 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
             });
           }
         } catch (err) {
-          console.error("Error in file-transfer-approval-response handler:", err);
+          console.error(
+            "Error in file-transfer-approval-response handler:",
+            err,
+          );
         }
       });
 
@@ -357,7 +403,9 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
             if (io) {
               const oldSocket = io.sockets.sockets.get(existingUser.id);
               if (oldSocket) {
-                oldSocket.emit('kicked', { reason: 'Another session joined with your username.' });
+                oldSocket.emit("kicked", {
+                  reason: "Another session joined with your username.",
+                });
                 oldSocket.disconnect(true);
               }
             }
@@ -432,11 +480,18 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
           }
 
           // Check for banned words (curse word ban)
-          if ((bannedWords as string[]).some((word: string) => new RegExp(`\\b${word}\\b`, "i").test(content))) {
+          if (
+            (bannedWords as string[]).some((word: string) =>
+              new RegExp(`\\b${word}\\b`, "i").test(content),
+            )
+          ) {
             // Ban this IP for 2 minutes
             bannedIps[ip] = Date.now() + 2 * 60 * 1000;
             saveBannedIps(bannedIps);
-            socket.emit("error", "You used a banned word and are banned by IP for 2 minutes.");
+            socket.emit(
+              "error",
+              "You used a banned word and are banned by IP for 2 minutes.",
+            );
             socket.disconnect();
             return;
           }
