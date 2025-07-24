@@ -69,12 +69,12 @@ az webapp create \
   --plan chat-app-free-plan \
   --name NoobChat \
   --runtime "NODE:20-lts" \
-  --startup-file "server.js"
+  --startup-file "pnpm start"
 ```
 
 _Note: Replace `NoobChat` with a unique name_
 
-**💡 Runtime Note:** Using NODE:20-lts (Node.js 20 LTS) which is compatible with your Next.js app
+**💡 Runtime Note:** Using NODE:20-lts (Node.js 20 LTS) with npm start command for proper Next.js deployment
 
 **FREE TIER LIMITATIONS:**
 
@@ -95,10 +95,15 @@ az webapp config appsettings set \
     PORT=8080 \
     WEBSITE_NODE_DEFAULT_VERSION=20.11.0 \
     SCM_DO_BUILD_DURING_DEPLOYMENT=true \
-    WEBSITE_RUN_FROM_PACKAGE=1
+    WEBSITE_RUN_FROM_PACKAGE=0 \
+    NPM_CONFIG_PRODUCTION=false \
+    ENABLE_ORYX_BUILD=true
 ```
 
-**💡 Cost-Saving Tip:** `WEBSITE_RUN_FROM_PACKAGE=1` reduces startup time and disk usage
+**💡 Cost-Saving Tips:**
+
+- `WEBSITE_RUN_FROM_PACKAGE=1` reduces startup time and disk usage
+- `NPM_CONFIG_PRODUCTION=false` ensures dev dependencies are available for Next.js build
 
 ### **Step 6: Enable WebSocket Support**
 
@@ -172,7 +177,7 @@ SCM_DO_BUILD_DURING_DEPLOYMENT=true
 
 ### 2. `server.js` file ✅
 
-Custom server for Azure deployment with proper port handling.
+Custom Next.js server with proper shebang for Azure deployment and port handling.
 
 ### 3. `web.config` file ✅
 
@@ -180,7 +185,19 @@ IIS configuration for Azure App Service.
 
 ### 4. Updated `package.json` ✅
 
-Added engines specification for Node.js version.
+Added engines specification for Node.js 20 and updated start script to use `node server.js`.
+
+---
+
+## 🔧 Deployment Process Explained
+
+### **What happens during deployment:**
+
+1. **GitHub Integration:** Azure pulls your code from GitHub
+2. **Dependency Installation:** Runs `npm install` automatically
+3. **Build Process:** Azure runs `npm run build` to build your Next.js app
+4. **Startup:** Uses `npm start` which runs `node server.js`
+5. **Custom Server:** Your `server.js` starts the Next.js app on port 8080
 
 ---
 
@@ -260,12 +277,30 @@ az webapp log tail \
   --name NoobChat
 ```
 
+### **Trigger New Deployment:**
+
+```bash
+# After pushing changes to GitHub
+az webapp deployment source sync \
+  --resource-group chat-app-rg \
+  --name NoobChat
+```
+
 ### **Restart Application:**
 
 ```bash
 az webapp restart \
   --resource-group chat-app-rg \
   --name NoobChat
+```
+
+### **Update Startup Command (if needed):**
+
+```bash
+az webapp config set \
+  --resource-group chat-app-rg \
+  --name NoobChat \
+  --startup-file "npm start"
 ```
 
 ### **Get Application URL:**
@@ -280,7 +315,59 @@ az webapp show \
 
 ---
 
-## 📊 Important Notes (Cost-Optimized)
+## � Common Issues & Solutions
+
+### **Issue 1: White Screen / App Not Loading**
+
+**Cause:** Next.js app not properly built or started
+**Solution:**
+
+```bash
+# Check logs first
+az webapp log tail --resource-group chat-app-rg --name NoobChat
+
+# Update startup command
+az webapp config set --resource-group chat-app-rg --name NoobChat --startup-file "npm start"
+
+# Trigger new deployment
+az webapp deployment source sync --resource-group chat-app-rg --name NoobChat
+```
+
+### **Issue 2: "server.js not found" Error**
+
+**Cause:** Startup command pointing to wrong file
+**Solution:**
+
+```bash
+# Fix startup command
+az webapp config set --resource-group chat-app-rg --name NoobChat --startup-file "npm start"
+```
+
+### **Issue 3: Build Failures**
+
+**Cause:** Missing dev dependencies or build issues
+**Solution:**
+
+```bash
+# Ensure NPM_CONFIG_PRODUCTION is false
+az webapp config appsettings set --resource-group chat-app-rg --name NoobChat --settings NPM_CONFIG_PRODUCTION=false
+
+# Commit any missing files and redeploy
+git add . && git commit -m "Fix build issues" && git push origin main
+```
+
+### **Issue 4: Cold Starts Taking Too Long**
+
+**Cause:** Free tier limitation
+**Solutions:**
+
+- Wait 10-15 seconds for cold start
+- Visit the site occasionally to keep it warm
+- Upgrade to B1 tier for always-on ($13/month)
+
+---
+
+## �📊 Important Notes (Cost-Optimized)
 
 ### **Free Tier Limitations:**
 
@@ -320,10 +407,22 @@ az webapp show \
 ## 🎯 Next Steps After Deployment (FREE TIER)
 
 1. **Test the application** at your Azure URL (.azurewebsites.net)
-2. **Monitor CPU usage** to stay within free quota
-3. **Set up simple logging** (free) instead of paid monitoring
-4. **Only upgrade if necessary** when you hit free tier limits
-5. **Share your app** - .azurewebsites.net domain works perfectly!
+2. **Wait for cold start** (10-15 seconds on first visit)
+3. **Test chat functionality:**
+   - Enter a username and join the chat
+   - Send messages and test real-time features
+   - Test admin features with username: `noobokay`, password: `noobokay`
+4. **Monitor CPU usage** to stay within free quota
+5. **Set up simple logging** (free) instead of paid monitoring
+6. **Only upgrade if necessary** when you hit free tier limits
+7. **Share your app** - .azurewebsites.net domain works perfectly!
+
+### **Testing Your Chat App:**
+
+- **Regular User:** Any username/password to test basic chat
+- **Admin User:** Username: `noobokay`, Password: `noobokay`
+- **Admin Commands:** `/ban`, `/unban`, `/kick`, `/clear`, `/announce`, `/approve`, `/users`
+- **Features to Test:** Real-time messaging, file transfers, WebSocket connection
 
 ---
 
