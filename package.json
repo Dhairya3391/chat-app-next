@@ -12,7 +12,8 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
-    "start": "next start"
+    "start": "node server.js",
+    "azure:start": "npm run build && npm start"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
